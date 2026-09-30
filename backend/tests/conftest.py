@@ -43,3 +43,11 @@ def client(db):
     with TestClient(app, headers={"X-Requested-With": "AISeedStudio"}) as http:
         yield http
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def no_paid_services_in_tests(monkeypatch):
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "image_provider", "mock")
+    monkeypatch.setattr(get_settings(), "llm_provider", "local")

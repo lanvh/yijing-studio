@@ -5,6 +5,7 @@ import logging
 import uuid
 import zipfile
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -15,8 +16,8 @@ from app.models.user import User
 from app.providers.contracts import GenerationRequest, GenerationSettings, ImageReference
 from app.providers.router import ProviderRouter
 from app.schemas.generation import CopyEdit, TaskCreate
+from app.services.ai_copy import compose_copy
 from app.services.ai_models import ModelService
-from app.services.content_copy import CopyWriter
 from app.services.images import ImageService
 from app.services.products import ProductService
 from app.services.prompts import PromptBuilder
@@ -83,8 +84,10 @@ class GenerationService:
                 raise GenerationError("提交标识已用于另一组参数，请重新提交。")
             self.db.commit()
             return self.owned(existing.id, user_id)
-        if get_settings().image_provider != "mock":
-            raise GenerationError("当前版本只支持 Mock，请将图片服务配置为 mock。", 503)
+        image_service = self.images or ImageService()
+        health = asyncio.run(image_service.health_check())
+        if not health.available:
+            raise GenerationError(health.message, 503)
         model = ModelService(self.db, self.storage).owned(payload.model_id, user_id, lock=True)
         product = ProductService(self.db, self.storage).owned(
             payload.product_id, user_id, lock=True
@@ -145,7 +148,7 @@ class GenerationService:
             task = GenerationTask(
                 id=task_id,
                 user_id=user_id,
-                provider="mock",
+                provider=image_service.router.name,
                 snapshot=snapshot,
                 prompt=prompt,
                 negative_prompt=negative,
@@ -171,11 +174,27 @@ class GenerationService:
         task.completed_at = None
         task.error_message = ""
         task.lease_expires_at = task.started_at + timedelta(
-            seconds=get_settings().image_provider_timeout_seconds * 2 + 60
+            seconds=(
+                get_settings().image_api_timeout_seconds
+                if task.provider == "openai"
+                else get_settings().image_provider_timeout_seconds
+            )
+            * 2
+            + get_settings().llm_timeout_seconds
+            + 60
         )
         remaining = max(0, task.requested_count - len(task.results))
         snapshot, prompt, negative = task.snapshot, task.prompt, task.negative_prompt
         provider = task.provider
+        copy_context = SimpleNamespace(
+            id=task_id,
+            is_mock=task.is_mock,
+            snapshot=snapshot,
+            scene=task.scene,
+            style=task.style,
+            pose=task.pose,
+        )
+        needs_copy = task.copy is None
         self.db.commit()
         # Provider runs outside a database transaction. Attempt acts as a fencing token.
         written, outputs, jobs = [], [], []
@@ -244,6 +263,7 @@ class GenerationService:
         except Exception as exc:
             logger.error("Task generation failed: %s", type(exc).__name__)
             error = "生成或图片存储失败，请检查服务后重试。"
+        draft = compose_copy(copy_context) if outputs and needs_copy else None
         try:
             task = self.owned(task_id, user_id, lock=True)
             if task.attempt != attempt or task.status != "PROCESSING":
@@ -262,7 +282,7 @@ class GenerationService:
             task.completed_at = datetime.now(UTC)
             task.lease_expires_at = None
             if total and task.copy is None:
-                task.copy = CopyWriter().compose(task)
+                task.copy = draft
             self.db.commit()
         except Exception:
             self.db.rollback()
@@ -318,20 +338,60 @@ class GenerationService:
         self.editable(task)
         if not task.results:
             raise GenerationError("请先生成至少一张图片。", 422)
-        draft = CopyWriter().compose(task)
+        if payload:
+            for key, value in payload.model_dump().items():
+                setattr(task.copy, key, value)
+            task.copy.source = "user_edited"
+            self.db.commit()
+            return task.copy
+        before = (
+            (
+                task.copy.title,
+                task.copy.caption,
+                task.copy.hashtags[:],
+                task.copy.product_summary,
+                task.copy.styling_notes,
+            )
+            if task.copy
+            else None
+        )
+        context = SimpleNamespace(
+            id=task.id,
+            is_mock=task.is_mock,
+            snapshot=task.snapshot,
+            scene=task.scene,
+            style=task.style,
+            pose=task.pose,
+        )
+        self.db.commit()
+        draft = compose_copy(context, allow_fallback=False)
+        task = self.owned(task_id, user_id, lock=True)
+        self.editable(task)
+        after = (
+            (
+                task.copy.title,
+                task.copy.caption,
+                task.copy.hashtags[:],
+                task.copy.product_summary,
+                task.copy.styling_notes,
+            )
+            if task.copy
+            else None
+        )
+        if before != after:
+            raise GenerationError("文案已在其他页面修改，请刷新后再生成。")
         if task.copy is None:
             task.copy = draft
-        values = (
-            payload.model_dump()
-            if payload
-            else {
-                key: getattr(draft, key)
-                for key in ("title", "caption", "hashtags", "product_summary", "styling_notes")
-            }
-        )
-        for key, value in values.items():
-            setattr(task.copy, key, value)
-        task.copy.source = "user_edited" if payload else "local_template"
+        else:
+            for key in (
+                "title",
+                "caption",
+                "hashtags",
+                "product_summary",
+                "styling_notes",
+                "source",
+            ):
+                setattr(task.copy, key, getattr(draft, key))
         self.db.commit()
         return task.copy
 
@@ -345,7 +405,9 @@ class GenerationService:
         manifest = {
             "task_id": str(task.id),
             "mock": task.is_mock,
-            "real_generation": False,
+            "real_generation": not task.is_mock,
+            "provider": task.provider,
+            "created_at": task.created_at.isoformat(),
             "requested_count": task.requested_count,
             "exported_count": len(selected),
             "status": task.status,
@@ -368,6 +430,10 @@ class GenerationService:
                         "file": name,
                         "id": str(result.id),
                         "file_check": result.result_metadata["file_check"],
+                        "provider": task.provider,
+                        "model": result.result_metadata.get("model"),
+                        "created_at": result.created_at.isoformat(),
+                        "ai_generated": not task.is_mock,
                     }
                 )
             for name, content in {
@@ -378,8 +444,12 @@ class GenerationService:
                 "styling_notes.txt": task.copy.styling_notes,
                 "product.json": json.dumps(task.snapshot["product"], ensure_ascii=False, indent=2),
                 "manifest.json": json.dumps(manifest, ensure_ascii=False, indent=2),
-                "README.txt": "Mock 演示素材，非真实 AI 换装结果。"
-                "请核对图片和商品信息；由你手动发布。\n"
+                "README.txt": (
+                    "Mock 演示素材，非真实 AI 换装结果。"
+                    if task.is_mock
+                    else "AI 辅助生成素材，并非真实试穿记录。"
+                )
+                + "请核对图片和商品信息；由你手动发布。\n"
                 "仅进行了文件完整性检查，未评估身份、商品一致性或美观度。",
             }.items():
                 archive.writestr(name, content)

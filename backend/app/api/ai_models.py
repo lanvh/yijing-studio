@@ -2,12 +2,14 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.dependencies import CurrentUser, Db, require_same_origin
 from app.core.config import get_settings
 from app.repositories.ai_models import ModelRepository
 from app.schemas.ai_model import ImageResponse, ModelCreate, ModelPage, ModelResponse, ModelUpdate
 from app.services.ai_models import ModelService
+from app.services.character_generation import CharacterGenerationService
 from app.storage.local import ImageStorage, get_image_storage
 
 router = APIRouter(prefix="/models", tags=["models"])
@@ -105,3 +107,20 @@ def delete_image(
     storage: Storage,
 ):
     ModelService(db, storage).delete_image(model_id, user.id, image_id)
+
+
+class ReferenceGeneration(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_key: uuid.UUID = Field(default_factory=uuid.uuid4)
+
+
+@router.post(
+    "/{model_id}/generate-reference",
+    response_model=ImageResponse,
+    status_code=201,
+    dependencies=write,
+)
+def generate_reference(
+    model_id: uuid.UUID, payload: ReferenceGeneration, user: CurrentUser, db: Db, storage: Storage
+):
+    return CharacterGenerationService(db, storage).generate(model_id, user.id, payload.request_key)

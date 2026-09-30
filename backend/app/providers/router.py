@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 from app.core.config import get_settings
 from app.providers.contracts import ImageProvider
 from app.providers.mock import MockImageProvider
+from app.providers.openai_images import OpenAIImageProvider
 
 
 class ProviderUnavailable(Exception):
@@ -18,7 +19,11 @@ class ProviderRouter:
         factories: Mapping[str, Callable[[], ImageProvider]] | None = None,
     ):
         self.name = get_settings().image_provider if name is None else name
-        self.factories = {"mock": MockImageProvider} if factories is None else dict(factories)
+        self.factories = (
+            {"mock": MockImageProvider, "openai": OpenAIImageProvider}
+            if factories is None
+            else dict(factories)
+        )
 
     def select(self) -> ImageProvider:
         factory = self.factories.get(self.name)

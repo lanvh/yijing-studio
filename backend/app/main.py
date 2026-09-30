@@ -14,6 +14,7 @@ from app.api.providers import router as providers_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.upload_limits import UploadSizeLimitMiddleware
+from app.providers.openai_http import ExternalServiceError
 from app.services.ai_models import ModelNotFound
 from app.services.generation import GenerationError
 from app.services.image_uploads import UploadRejected
@@ -34,6 +35,11 @@ app.include_router(products_router, prefix="/api/v1")
 app.include_router(providers_router, prefix="/api/v1")
 app.include_router(generation_router, prefix="/api/v1")
 app.add_middleware(UploadSizeLimitMiddleware)
+
+
+@app.exception_handler(ExternalServiceError)
+async def external_error(request: Request, exc: ExternalServiceError):
+    return JSONResponse(status_code=503, content={"detail": exc.message})
 
 
 @app.exception_handler(GenerationError)

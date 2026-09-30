@@ -20,7 +20,11 @@ class ImageService:
     def __init__(self, router: ProviderRouter | None = None, timeout_seconds: float | None = None):
         self.router = router if router is not None else ProviderRouter()
         self.timeout = (
-            get_settings().image_provider_timeout_seconds
+            (
+                get_settings().image_api_timeout_seconds
+                if self.router.name == "openai"
+                else get_settings().image_provider_timeout_seconds
+            )
             if timeout_seconds is None
             else timeout_seconds
         )
@@ -77,7 +81,15 @@ class ImageService:
         except ProviderUnavailable:
             return self.failure("unavailable", "所配置的图片 Provider 尚未实现。")
         except TimeoutError:
-            return self.failure("timeout", "图片 Provider 响应超时，请稍后重试。", retryable=True)
+            return self.failure(
+                "timeout",
+                (
+                    "图片服务响应超时；请求可能已计费，重试前请检查账户用量。"
+                    if self.router.name == "openai"
+                    else "图片 Provider 响应超时，请稍后重试。"
+                ),
+                retryable=True,
+            )
         except Exception as exc:
             # Do not include vendor exception text: it may contain prompts or credentials.
             logger.error("Image provider call failed: %s", type(exc).__name__)

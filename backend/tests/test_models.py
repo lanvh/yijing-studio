@@ -337,7 +337,7 @@ def test_mutation_csrf_and_missing_ids(signed_in, model):
 def test_private_storage_is_not_static(signed_in, model):
     upload(signed_in, model["id"])
     assert signed_in.get("/storage/models").status_code == 404
-    assert signed_in.post(f"/api/v1/models/{model['id']}/generate-reference").status_code == 404
+    assert signed_in.post(f"/api/v1/models/{model['id']}/generate-reference").status_code == 422
 
 
 def test_image_orientation_and_metadata_are_normalized(signed_in, model):

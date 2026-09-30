@@ -134,3 +134,32 @@ def download(task_id: uuid.UUID, user: CurrentUser, db: Db, storage: Storage):
 @router.post("/tasks/{task_id}/export", dependencies=write)
 def export(task_id: uuid.UUID, user: CurrentUser, db: Db, storage: Storage):
     return download(task_id, user, db, storage)
+
+
+@router.get("/stats")
+def stats(user: CurrentUser, db: Db):
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import func, select
+
+    from app.models.ai_model import AIModel
+    from app.models.generation import GenerationTask
+    from app.models.product import Product
+
+    now = datetime.now(UTC)
+    week_start = (now - timedelta(days=now.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    def count(model, *filters):
+        return db.scalar(
+            select(func.count()).select_from(model).where(model.user_id == user.id, *filters)
+        )
+
+    return {
+        "models": count(AIModel),
+        "products": count(Product),
+        "tasks": count(GenerationTask),
+        "weekly_tasks": count(GenerationTask, GenerationTask.created_at >= week_start),
+        "succeeded_tasks": count(GenerationTask, GenerationTask.status == "SUCCEEDED"),
+    }

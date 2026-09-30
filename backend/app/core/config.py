@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +20,16 @@ class Settings(BaseSettings):
     max_product_images: int = Field(default=8, ge=1, le=20)
     image_provider: str = Field(default="mock", min_length=1, max_length=64)
     image_provider_timeout_seconds: float = Field(default=30, ge=1, le=120)
+    image_api_key: SecretStr = SecretStr("")
+    image_api_base_url: str = ""
+    image_model: str = ""
+    image_quality: Literal["low", "medium", "high"] = "low"
+    image_api_timeout_seconds: float = Field(default=180, ge=1, le=600)
+    llm_provider: str = ""
+    llm_api_key: SecretStr = SecretStr("")
+    llm_api_base_url: str = ""
+    llm_model: str = ""
+    llm_timeout_seconds: float = Field(default=60, ge=1, le=120)
     allowed_image_types: str = "image/jpeg,image/png,image/webp"
 
 

@@ -311,6 +311,11 @@ def test_stale_worker_cannot_overwrite_newer_attempt(client, ready, db, user, tm
     wrapped = service.images
 
     class Superseded:
+        router = wrapped.router
+
+        async def health_check(self):
+            return await wrapped.health_check()
+
         async def generate(self, request):
             result = await wrapped.generate(request)
             task = db.scalar(select(GenerationTask).where(GenerationTask.user_id == user.id))
