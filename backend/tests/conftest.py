@@ -13,13 +13,13 @@ from app.services.auth import AuthService
 PASSWORD = "Test-only-password-123!"
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def migrated_database():
     command.upgrade(Config("alembic.ini"), "head")
 
 
 @pytest.fixture
-def db():
+def db(migrated_database):
     with engine.connect() as connection:
         transaction = connection.begin()
         with Session(bind=connection, join_transaction_mode="create_savepoint") as session:

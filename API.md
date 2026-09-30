@@ -133,3 +133,27 @@ GET /providers
 
 本阶段继承登录、同源写请求和所有权校验。商品图片默认最多 8 次上传（16 条原图/预览记录）；
 格式、像素和文件大小限制复用 Phase 2。错误状态沿用 401/403/404/409/413/415/422/503。
+
+
+## Phase 4 实现约定
+
+GET /providers 已实现，要求有效登录 Cookie，返回配置中的当前 Provider 状态：
+
+```json
+{
+  "provider": "mock",
+  "available": true,
+  "mock": true,
+  "requires_api_key": false,
+  "operations": ["create_character", "virtual_try_on", "edit_image", "generate_scene", "generate_content_set"],
+  "message": "本地 Mock 可用；输出带标记的占位图，不调用 AI。"
+}
+```
+
+返回 Cache-Control: no-store，不暴露 Key、厂商地址或 .env 内容。
+配置了未实现的 Provider 时，接口仍返回 200 状态报告，但 available=false、
+operations=[]、requires_api_key=null；应用的登录和商品管理仍可正常使用。
+健康检查超时/异常也以 available=false 报告，不表示 Provider 可用。
+
+本阶段尚不开放 /generation/tasks、/models/{id}/generate-reference 或结果下载 API。
+本地开发验收使用 python -m app.mock_job；业务任务 REST 接口属于 Phase 5。

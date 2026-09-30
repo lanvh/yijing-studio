@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     max_image_pixels: int = Field(default=24_000_000, ge=1024, le=50_000_000)
     max_model_images: int = Field(default=8, ge=1, le=20)
     max_product_images: int = Field(default=8, ge=1, le=20)
+    image_provider: str = Field(default="mock", min_length=1, max_length=64)
+    image_provider_timeout_seconds: float = Field(default=30, ge=1, le=120)
     allowed_image_types: str = "image/jpeg,image/png,image/webp"
 
 

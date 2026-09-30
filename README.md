@@ -106,12 +106,13 @@ Analytics
 
 AI Fashion Content Studio
 
-## 当前进度：Phase 0 / Phase 1 / Phase 2 / Phase 3
+## 当前进度：Phase 0 / Phase 1 / Phase 2 / Phase 3 / Phase 4
 
 已完成项目初始化、账号创建、登录、会话查询、退出与受保护工作台。
 已完成 AI 模特 CRUD、参考图片管理、商品 CRUD、商品图片预览与原图下载。
-未开放注册；图片生成、文案和整套素材导出尚未实现。
-本次止于 Phase 3；经用户确认后再进入 Phase 4。
+已完成 Mock Provider 本地调用与多张占位图输出。
+未开放注册；业务生成任务、真实图片生成、文案和整套素材导出尚未实现。
+本次止于 Phase 4；经用户确认后再进入 Phase 5。
 
 ### 实际目录
 
@@ -285,7 +286,7 @@ powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
 后端测试使用真实 PostgreSQL，每个认证测试使用可回滚事务，migration 测试使用独立临时 schema；
 测试前显式升级 schema。仅对本地开发数据库运行。
 浏览器测试使用本机 Edge；需先启动服务，并在根目录 .env 提供 ADMIN_EMAIL/ADMIN_PASSWORD。
-无 AI API Key 不影响上述启动和验证。Phase 0/1 历史记录见 PHASE_0_1_REPORT.md，Phase 2 历史见 PHASE_2_REPORT.md，当前阶段见 PHASE_3_REPORT.md。
+无 AI API Key 不影响上述启动和验证。Phase 0/1 历史记录见 PHASE_0_1_REPORT.md，Phase 2 历史见 PHASE_2_REPORT.md，Phase 3 历史见 PHASE_3_REPORT.md，当前阶段见 PHASE_4_REPORT.md。
 
 ## Phase 2：AI 模特库
 
@@ -387,4 +388,66 @@ API 文档 http://localhost:8000/docs。验证命令沿用上文。
 
 验收覆盖上衣、运动鞋、手表、项链、包袋；使用明确的合成示意图，
 测试结束清理自己创建的商品及图片。桌面与移动截图位于 storage/qa/phase3-*.png。
-详见 PHASE_3_REPORT.md。下一阶段 Phase 4（Mock Image Provider）尚未开始。
+详见 PHASE_3_REPORT.md。Phase 4 实现见下文。
+
+
+## Phase 4：Mock Image Provider
+
+已实现统一异步 ImageProvider、MockImageProvider、ProviderRouter、ImageService，
+以及需登录的 GET /api/v1/providers。无 API Key、无第三方 AI 网络连接即可生成占位图。
+当前用户页面继续使用 Phase 3 的模特库与商品库，创建内容和结果页面按后续阶段实施。
+
+配置：
+
+```dotenv
+IMAGE_PROVIDER=mock
+IMAGE_PROVIDER_TIMEOUT_SECONDS=30
+```
+
+已有 .env 缺少这些字段时采用上述默认值。IMAGE_API_KEY、IMAGE_API_BASE_URL、
+IMAGE_MODEL 仍为后续真实 Provider 预留，Mock 不读取这些值。
+未知 IMAGE_PROVIDER 不会回退到 Mock，而是返回明确的不可用结果。
+本阶段未新增依赖与数据库表，migration 仍为 0003。
+
+### 本地 Provider 任务验收
+
+从项目根目录进入 backend 后运行：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.mock_job --count 4
+```
+
+此命令使用合成参考图，经过 ImageService → ProviderRouter → MockImageProvider，
+在项目 storage/mock_jobs/<UUID>/ 保存 4 张 JPEG 和 manifest.json。
+命令输出结果清单的 storage key；相对存储路径按项目根目录解析。
+它不连接 PostgreSQL、不读取商品/人物数据、不调用第三方 AI，不需要启动前端。
+现有 .env 提供应用配置即可。所有占位图都带明显 Mock 标记。
+
+可选 --operation：create_character、virtual_try_on、edit_image、generate_scene、
+generate_content_set（默认）。可选 --count：1、2、4、6；--seed 用于重复验证。
+
+用于开发测试的失败模拟：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.mock_job --count 4 --simulate-failure-at 2
+.\.venv\Scripts\python.exe -m app.mock_job --count 2 --simulate-failure-at 1 2
+```
+
+成功退出码为 0；部分/全部生成失败为 2，清单仍保留错误和成功图片；
+存储写入失败为 1，并回收本次已经写入的文件。
+--simulate-failure-at 仅供本地命令使用，不作为线上请求参数。
+这些是 Provider 验收任务，不是已入库的 GenerationTask，也不会出现在任务页面。
+
+### 验证与边界
+
+```powershell
+# backend 目录内；以下专项测试不要求 PostgreSQL 运行
+.\.venv\Scripts\python.exe -m pytest tests/test_providers.py -k "not status_authentication" -q
+# 完整回归仍要求启动 PostgreSQL
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Mock 不执行真实人物创建、试穿、图片编辑或场景生成，仅验证调用与结果交付链路。
+没有新增运行依赖，演示文件保存在项目 D 盘 storage 内。
+完整实现与验证结果见 PHASE_4_REPORT.md。下一阶段是 Phase 5 生成任务，尚未开始。
