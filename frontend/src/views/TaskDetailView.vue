@@ -72,7 +72,7 @@ async function saveCopy() {
   })
 }
 async function regenerate() {
-  try { await ElMessageBox.confirm('将用素材资料重新生成本地文案草稿，并覆盖已有文案。','重新生成文案',{confirmButtonText:'确认重新生成',cancelButtonText:'取消'}) }
+  try { await ElMessageBox.confirm('将用素材资料重新生成文案草稿并覆盖已有文案。配置 AI 文案服务时会产生相应调用费用。','重新生成文案',{confirmButtonText:'确认重新生成',cancelButtonText:'取消'}) }
   catch { return }
   await act(async () => {
     const copy = await generationApi.regenerateCopy(String(route.params.id))
@@ -147,7 +147,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
         </div><span :class="['task-status',task.status]">{{ statusLabels[task.status] }}</span>
       </div>
       <div class="mock-notice">
-        <strong>Mock 演示结果</strong><span>这些图片是本地生成的示意素材，不是真实 AI 换装。文件检查通过不代表人物、商品或美观度已验证。</span>
+        <strong>{{ task.is_mock ? 'Mock 演示结果' : 'AI 生成结果' }}</strong><span>{{ task.is_mock ? '这些图片是本地生成的示意素材，不是真实 AI 换装。' : '图片为 AI 辅助视觉展示，并非真实试穿记录。' }}文件检查通过不代表人物、商品或美观度已验证。</span>
       </div>
       <section
         v-if="task.status !== 'SUCCEEDED'"
@@ -197,8 +197,8 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
           >
             <img
               :src="result.image_url"
-              :alt="'Mock 示意图 ' + (index+1)"
-            ><span>MOCK / {{ String(index+1).padStart(2,'0') }}</span>
+              :alt="(task.is_mock ? 'Mock 示意图 ' : 'AI 生成图 ') + (index+1)"
+            ><span>{{ task.is_mock ? 'MOCK' : 'AI' }} / {{ String(index+1).padStart(2,'0') }}</span>
           </button>
           <div class="result-card-body">
             <label class="result-select"><input
@@ -212,7 +212,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
             </p><div class="task-actions">
               <a
                 :href="result.image_url"
-                :download="'mock-' + (index+1) + '.jpg'"
+                :download="(task.is_mock ? 'mock-' : 'ai-') + (index+1) + '.jpg'"
               >下载图片</a><el-button
                 text
                 type="danger"
@@ -240,7 +240,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
             <p class="step-number">
               WORDS TO GO WITH YOUR IMAGES
             </p><h2>让文案也成为你的表达</h2>
-          </div><span class="muted">{{ dirty ? '有未保存修改' : task.copy.source === 'user_edited' ? '已保存你的编辑' : '本地模板草稿' }}</span>
+          </div><span class="muted">{{ dirty ? '有未保存修改' : task.copy.source === 'user_edited' ? '已保存你的编辑' : task.copy.source === 'openai' ? 'AI 文案草稿' : task.copy.source === 'local_fallback' ? 'AI 文案失败，已保留本地草稿' : '本地模板草稿' }}</span>
         </div>
         <p class="muted">
           草稿仅使用已填写的商品资料，不代表真实试穿或使用体验。发布前请核对。
@@ -327,7 +327,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
     </template>
     <el-dialog
       :model-value="!!preview"
-      title="Mock 图片预览"
+      title="结果图片预览"
       width="min(760px, 94vw)"
       @update:model-value="closePreview"
     >
@@ -335,7 +335,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
         v-if="preview"
         class="full-result"
         :src="preview.image_url"
-        alt="Mock 结果大图"
+        alt="结果大图"
       >
     </el-dialog>
   </WorkspaceLayout>

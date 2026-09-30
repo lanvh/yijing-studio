@@ -195,3 +195,20 @@ operations=[]、requires_api_key=null；应用的登录和商品管理仍可正�
 任务资料与参考图存储路径不通过 REST 返回。
 Mock 失败注入仅用于本地单元测试，不提供 HTTP 参数或测试后门。
 /models/{id}/generate-reference 与真实图片 Provider 仍未开放。
+
+
+## 完整 MVP 新增接口与行为
+
+- POST /models/{id}/generate-reference：JSON {request_key?: UUID}，返回 201/ImageResponse；
+  生成并保存 1 张参考图，支持 Mock / OpenAI。重复成功请求返回原图，
+  原图已删返回 404，正在生成/已处理失败/达到上限返回 409。每模特最多记录 100 次生成提交。
+  使用统一登录、同源与所有权校验，未配置服务返回 503，不发起隐式付费重试。
+- GET /providers：新增 copy_mode、copy_available、configuration_only；
+  仅检查配置，不发起付费远端探测，不验证账户余额或模型权限。
+- GET /generation/stats：当前账户 models/products/tasks/weekly_tasks/succeeded_tasks；
+  本周以 UTC 周一 00:00 起算。
+- /products/{id}/analyze 和商品图片上传在启用 LLM_PROVIDER=openai 时进行 AI 图片分析；
+  结果在 product_features.ai_analysis 中，confirmed=false，不覆盖 confirmed。
+- copy.source 可为 local_template、user_edited、openai、local_fallback。
+  任务中 AI 文案失败不丢弃图片；显式重生成失败返回 503 并保留原文案。
+- 真实任务与导出不再固定 mock 标识；每张结果 metadata 记录模型与 usage（若上游提供）。

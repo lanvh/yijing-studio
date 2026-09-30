@@ -2,6 +2,7 @@ import { api } from './client'
 import type { AIModel, ModelProfile, ModelPage, ModelLimits, ReferenceImage } from '../types/models'
 
 export const modelsApi = {
+  generateReference: async (id: string, key: string) => (await api.post<ReferenceImage>('/models/' + id + '/generate-reference', { request_key: key }, { timeout: 700000 })).data,
   list: async (q = '', offset = 0, limit = 12) =>
     (await api.get<ModelPage>('/models', { params: { q, offset, limit } })).data,
   limits: async () => (await api.get<ModelLimits>('/models/options')).data,

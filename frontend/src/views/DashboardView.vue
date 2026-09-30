@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { modelsApi } from '../api/models'
-import { productsApi } from '../api/products'
 import { generationApi } from '../api/generation'
 import { errorMessage } from '../api/client'
 import { statusLabels, type TaskSummary } from '../types/generation'
@@ -12,8 +10,8 @@ const counts = ref<number[] | null>(null), recent = ref<TaskSummary[]>([]), erro
 async function load() {
   error.value = ''
   try {
-    const [models,products,tasks] = await Promise.all([modelsApi.list('',0,1),productsApi.list('','',0,1),generationApi.list(0,5)])
-    counts.value = [models.total, products.total, tasks.total]; recent.value = tasks.items
+    const [stats,tasks] = await Promise.all([generationApi.stats(),generationApi.list(0,5)])
+    counts.value = [stats.models, stats.products, stats.tasks, stats.weekly_tasks, stats.succeeded_tasks]; recent.value = tasks.items
   } catch (cause) { error.value = errorMessage(cause) }
 }
 onMounted(load)
@@ -27,7 +25,7 @@ onMounted(load)
         </p><h1>你好，{{ auth.user?.display_name }}。</h1><p class="muted">
           欢迎来到你的 AI 摄影棚。好作品，从这里开始。
         </p>
-      </div><span class="version-pill">Mock 工作流</span>
+      </div><span class="version-pill">创作工作流</span>
     </div>
     <section class="welcome-card">
       <div>
@@ -75,7 +73,7 @@ onMounted(load)
           class="next-label"
           to="/create-content"
         >
-          创建 Mock 内容 →
+          创建内容 →
         </router-link>
       </article>
     </section>
@@ -104,6 +102,12 @@ onMounted(load)
       <router-link to="/tasks">
         创作任务<strong>{{ counts[2] }}</strong>
       </router-link>
+      <router-link to="/tasks">
+        本周任务<strong>{{ counts[3] }}</strong>
+      </router-link>
+      <router-link to="/tasks">
+        成功任务<strong>{{ counts[4] }}</strong>
+      </router-link>
     </section>
     <section class="recent-section">
       <div class="section-title">
@@ -124,7 +128,7 @@ onMounted(load)
           <div class="task-symbol">
             ✧
           </div><div class="task-row-main">
-            <h2>{{ task.product_name }}</h2><p>{{ task.model_name }} · Mock · {{ task.result_count }} 张结果</p>
+            <h2>{{ task.product_name }}</h2><p>{{ task.model_name }} · {{ task.is_mock ? 'Mock' : 'AI' }} · {{ task.result_count }} 张结果</p>
           </div><span :class="['task-status',task.status]">{{ statusLabels[task.status] }}</span>
         </router-link>
       </div>

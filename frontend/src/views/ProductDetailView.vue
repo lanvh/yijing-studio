@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import WorkspaceLayout from '../layouts/WorkspaceLayout.vue'
 import ProductCover from '../components/ProductCover.vue'
+import { generationApi } from '../api/generation'
 import { productsApi } from '../api/products'
 import { errorMessage } from '../api/client'
 import { categoryLabels, type Product, type ProductLimits, type ProductImage } from '../types/products'
@@ -22,13 +23,15 @@ const deletingProduct = ref(false)
 const preview = ref<ProductImage | null>(null)
 const notice = ref('')
 const analyzing = ref(false)
+const provider = ref<Awaited<ReturnType<typeof generationApi.provider>> | null>(null)
 function setPreviewOpen(value: boolean) { if (!value) preview.value = null }
 async function load() {
   busy.value = true
   error.value = ''
   product.value = null
   try {
-    const [record, options] = await Promise.all([productsApi.get(String(route.params.id)), productsApi.limits()])
+    const [record, options, status] = await Promise.all([productsApi.get(String(route.params.id)), productsApi.limits(), generationApi.provider()])
+    provider.value = status
     product.value = record
     limits.value = options
   } catch (cause) { error.value = errorMessage(cause) }
@@ -215,12 +218,44 @@ watch(() => route.params.id, load, { immediate: true })
           添加图片后，将展示图片色板。
         </p>
       </section>
+      <section
+        v-if="product.product_features.ai_analysis"
+        class="form-panel"
+      >
+        <h2>AI 图片分析 · 待确认</h2>
+        <p v-if="product.product_features.ai_analysis.status === 'failed'">
+          {{ product.product_features.ai_analysis.message }}，可点击重新整理特征重试。
+        </p>
+        <template v-if="product.product_features.ai_analysis.findings">
+          <p>以下仅为图片观察建议，不会自动改写商品事实。请核对后在编辑资料中填写确认信息。</p>
+          <dl class="profile-facts">
+            <div><dt>可见颜色</dt><dd>{{ product.product_features.ai_analysis.findings.colors.join('、') || '未知' }}</dd></div>
+            <div><dt>图案</dt><dd>{{ product.product_features.ai_analysis.findings.pattern || '未知' }}</dd></div>
+            <div><dt>Logo 位置</dt><dd>{{ product.product_features.ai_analysis.findings.logo_description || '未知' }}</dd></div>
+            <div><dt>结构</dt><dd>{{ product.product_features.ai_analysis.findings.shape || '未知' }}</dd></div>
+            <div><dt>表面外观（非材质结论）</dt><dd>{{ product.product_features.ai_analysis.findings.material_appearance || '未知' }}</dd></div>
+          </dl>
+          <p>{{ product.product_features.ai_analysis.findings.critical_features.join('；') }}</p>
+          <p class="muted">
+            {{ product.product_features.ai_analysis.findings.uncertainties.join('；') }}
+          </p>
+        </template>
+      </section>
+      <router-link :to="{ path: '/create-content', query: { product: product.id } }">
+        使用这个商品创建内容 →
+      </router-link>
       <section class="reference-section">
         <div class="section-title">
           <h2>商品图片 <span class="reference-count">{{ product.processed_images.length }} / {{ limits?.max_product_images }}</span></h2><span class="muted">第一张图片作为商品封面</span>
         </div>
         <p class="reference-intro">
           添加正面、侧面与局部细节图片。原文件保留供下载，预览图会修正方向并清理元数据。
+        </p>
+        <p
+          v-if="provider?.copy_mode === 'openai'"
+          class="mock-notice"
+        >
+          已启用 AI 商品分析。上传后将把最多前 4 张商品预览图发送至已配置服务，产生相应分析费用。
         </p>
         <div class="upload-panel">
           <div>

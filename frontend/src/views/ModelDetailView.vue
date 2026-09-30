@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import WorkspaceLayout from '../layouts/WorkspaceLayout.vue'
 import ModelPortrait from '../components/ModelPortrait.vue'
+import { generationApi } from '../api/generation'
 import { modelsApi } from '../api/models'
 import { errorMessage } from '../api/client'
 import { genderLabels, type AIModel, type ModelLimits, type ReferenceImage } from '../types/models'
@@ -21,17 +22,30 @@ const removing = ref('')
 const deletingModel = ref(false)
 const preview = ref<ReferenceImage | null>(null)
 const notice = ref('')
+const generating = ref(false)
+const provider = ref<Awaited<ReturnType<typeof generationApi.provider>> | null>(null)
 function setPreviewOpen(value: boolean) { if (!value) preview.value = null }
 async function load() {
   busy.value = true
   error.value = ''
   model.value = null
   try {
-    const [record, options] = await Promise.all([modelsApi.get(String(route.params.id)), modelsApi.limits()])
+    const [record, options, status] = await Promise.all([modelsApi.get(String(route.params.id)), modelsApi.limits(), generationApi.provider()])
+    provider.value = status
     model.value = record
     limits.value = options
   } catch (cause) { error.value = errorMessage(cause) }
   finally { busy.value = false }
+}
+async function generateReference() {
+  if (!model.value || generating.value) return
+  generating.value = true; error.value = ''; notice.value = ''
+  try {
+    const image = await modelsApi.generateReference(model.value.id,crypto.randomUUID())
+    model.value.reference_images.push(image)
+    notice.value = '生成的参考图已保存。'
+  } catch (cause) { error.value = errorMessage(cause) }
+  finally { generating.value = false }
 }
 async function upload(event: Event) {
   const input = event.target as HTMLInputElement
@@ -166,8 +180,25 @@ watch(() => route.params.id, load, { immediate: true })
           <h2>参考图片 <span class="reference-count">{{ model.reference_images.length }} / {{ limits?.max_model_images }}</span></h2><span class="muted">第一张图片作为模特封面</span>
         </div>
         <p class="reference-intro">
-          建议搭配正面、侧面与全身图，让人物特征更清晰。图片仅用于记录参考，当前不会触发 AI 生成。
+          建议搭配正面、侧面与全身图，让人物特征更清晰。可以上传已有虚拟人物图片，也可按人物档案生成新的参考图。
         </p>
+        <div class="creation-submit">
+          <div>
+            <strong>{{ provider?.mock ? '生成 Mock 参考图' : '生成 AI 虚拟模特参考图' }}</strong>
+            <p>{{ provider?.mock ? '按档案生成本地示意图，验证人物素材流程。' : '生成原创虚拟成人形象；使用已配置的图片服务，可能产生费用。' }}</p>
+          </div>
+          <el-button
+            type="primary"
+            :loading="generating"
+            :disabled="!provider?.available || uploading || !!removing || model.reference_images.length >= (limits?.max_model_images || 8)"
+            @click="generateReference"
+          >
+            生成参考图
+          </el-button>
+        </div>
+        <router-link :to="{ path: '/create-content', query: { model: model.id } }">
+          使用这个模特创建内容 →
+        </router-link>
         <div class="upload-panel">
           <div>
             <h3>添加人物参考图</h3><p>JPG / PNG / WebP · 每张不超过 {{ limits?.max_image_size_mb }} MB · 保存为清晰的 JPEG 图片</p>

@@ -139,3 +139,21 @@ Mock 的绘图在线程中执行，调用超时不会强制终止已运行的线
 python -m app.mock_job 在本地建立一次完整 Provider 请求，经过路由与服务得到多图结果，
 保存图片与 manifest。此开发验收任务不写入 generation_tasks / generation_results。
 Phase 5 再实现业务任务创建、持久化状态、结果入库与查询，Phase 6 接入创建和结果页面。
+
+
+## 官方 Provider 接入版
+
+OpenAIImageProvider 已实现统一五种操作。人物创建使用 /images/generations，
+其他含参考图操作使用 /images/edits；多图按“人物在前、商品在后”上传，并在提示词中说明。
+固定请求 JPEG，严格解码 Base64 并验证实际尺寸，不跟随远端 URL 下载图片。
+negative_prompt 转为普通提示词约束，seed 不发送；返回 metadata 明确记录这些差异。
+服务响应 usage 按原值保存，cost 未知时为 null，不声称费用为零。
+
+OpenAIHTTP 将服务端地址限制为官方 HTTPS API；禁止重定向，限制响应体大小，
+不回传原始上游错误正文，不自动重试，分别映射认证、限流、输入拒绝、超时和格式错误。
+OpenAITextProvider 通过 Responses 的严格 JSON Schema 支持文案和商品图片观察；
+store=false。Key 使用 SecretStr，配置状态仅返回可用性布尔值，不展示密钥。
+
+ImageService 路由到 openai 时使用 IMAGE_API_TIMEOUT_SECONDS；Mock 继续使用原超时设置。
+当前只有 Mock 与 OpenAI 两个图片实现，没有同时接入其他供应商。
+官方真实网络生成尚未验收：缺少本机 API Key；离线协议与业务集成测试已覆盖。

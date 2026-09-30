@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import WorkspaceLayout from '../layouts/WorkspaceLayout.vue'
 import ModelPortrait from '../components/ModelPortrait.vue'
 import ProductCover from '../components/ProductCover.vue'
@@ -13,12 +13,14 @@ import type { Product } from '../types/products'
 import type { GenerationOptions } from '../types/generation'
 
 const router = useRouter()
+const route = useRoute()
 const models = ref<AIModel[]>([]), products = ref<Product[]>([])
 const options = ref<GenerationOptions | null>(null)
 const form = reactive({ model_id: '', product_id: '', scene: 'studio', style: 'casual', pose: 'front_standing', requested_count: 4 })
 const modelQuery = ref(''), productQuery = ref('')
 const selectedModel = ref<AIModel | null>(null), selectedProduct = ref<Product | null>(null)
 const busy = ref(false), loading = ref(true), searching = ref(false), error = ref('')
+const provider = ref<Awaited<ReturnType<typeof generationApi.provider>> | null>(null)
 const requestKey = ref(crypto.randomUUID())
 const ready = computed(() => !!selectedModel.value?.reference_images.length && !!selectedProduct.value?.processed_images.length)
 watch(form, () => { requestKey.value = crypto.randomUUID() })
@@ -37,12 +39,22 @@ async function search() {
 }
 async function initialize() {
   loading.value = true
-  try { options.value = await generationApi.options(); await search() }
+  try { const [presets, status] = await Promise.all([generationApi.options(), generationApi.provider()]); options.value = presets; provider.value = status; await search()
+    if (typeof route.query.model === 'string') {
+      const record = await modelsApi.get(route.query.model)
+      if (!models.value.some(m => m.id === record.id)) models.value.unshift(record)
+      form.model_id = record.id
+    }
+    if (typeof route.query.product === 'string') {
+      const record = await productsApi.get(route.query.product)
+      if (!products.value.some(p => p.id === record.id)) products.value.unshift(record)
+      form.product_id = record.id
+    } }
   catch (cause) { error.value = errorMessage(cause) }
   finally { loading.value = false }
 }
 async function submit() {
-  if (!ready.value || busy.value) return
+  if (!ready.value || busy.value || !provider.value?.available) return
   busy.value = true; error.value = ''
   try {
     const task = await generationApi.create({ ...form, request_key: requestKey.value })
@@ -66,8 +78,14 @@ onMounted(initialize)
       </router-link>
     </div>
     <div class="mock-notice">
-      <strong>Mock 演示模式</strong><span>使用本地示意图走通流程，不进行真实换装，不调用付费图片服务。</span>
+      <strong>{{ provider?.mock ? 'Mock 演示模式' : 'AI 图片生成' }}</strong><span>{{ provider?.mock ? '使用本地示意图走通流程，不进行真实换装，不调用付费图片服务。' : '参考图片会发送至已配置的服务生成内容，按服务商规则计费。请核对素材与生成数量。' }}</span>
     </div>
+    <el-alert
+      v-if="provider && !provider.available"
+      :title="provider.message"
+      type="warning"
+      :closable="false"
+    />
     <el-alert
       v-if="error"
       :title="error"
@@ -271,7 +289,7 @@ onMounted(initialize)
         </section>
         <section class="creation-submit">
           <div>
-            <strong>{{ form.requested_count }} 张 Mock 示意图 + 文案草稿</strong><p class="muted">
+            <strong>{{ form.requested_count }} 张{{ provider?.mock ? ' Mock 示意图' : ' AI 图片' }} + 文案草稿</strong><p class="muted">
               {{ ready ? '资料已就绪。生成后可选择图片、编辑文案并下载 ZIP。' : '模特和商品都需要至少一张图片。' }}
             </p>
           </div><el-button
@@ -279,9 +297,9 @@ onMounted(initialize)
             size="large"
             native-type="submit"
             :loading="busy"
-            :disabled="!ready || loading"
+            :disabled="!ready || loading || !provider?.available"
           >
-            生成 Mock 内容
+            {{ provider?.mock ? '生成 Mock 内容' : '生成 AI 内容' }}
           </el-button>
         </section>
       </fieldset>

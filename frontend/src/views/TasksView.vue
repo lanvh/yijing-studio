@@ -106,7 +106,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer) })
         <div class="task-row-main">
           <router-link :to="'/tasks/' + task.id">
             <h2>{{ task.product_name }}</h2>
-          </router-link><p>{{ task.model_name }} · {{ taskTime(task.created_at) }}</p><span class="muted">Mock · 已保存 {{ task.result_count }} / {{ task.requested_count }} 张</span>
+          </router-link><p>{{ task.model_name }} · {{ taskTime(task.created_at) }}</p><span class="muted">{{ task.is_mock ? "Mock" : "AI" }} · 已保存 {{ task.result_count }} / {{ task.requested_count }} 张</span>
         </div>
         <span :class="['task-status',task.status]">{{ statusLabels[task.status] }}</span>
         <div class="task-actions">
@@ -129,7 +129,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer) })
       class="empty-state"
     >
       <span>▧</span><div>
-        <h2>这里还没有任务</h2><p>选好模特与商品，开始第一组 Mock 创作。</p><router-link to="/create-content">
+        <h2>这里还没有任务</h2><p>选好模特与商品，开始第一组创作。</p><router-link to="/create-content">
           创建内容 →
         </router-link>
       </div>

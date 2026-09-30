@@ -177,3 +177,35 @@ test('partial task displays retry and retains edited copy', async ({page}) => {
   await page.getByRole('button',{name:'保存文案',exact:true}).click()
   await expect(page.getByText('文案已保存。',{exact:true})).toBeVisible()
 })
+
+
+test('real mode labels and missing credentials block generation without paid calls',async ({page}) => {
+  await page.route('**/api/v1/providers',route => route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({
+      provider:'openai',mock:false,available:false,requires_api_key:true,operations:[],
+      message:'未配置图片 API Key；请在服务端 .env 配置后重启。',
+      copy_mode:'openai',copy_available:false,configuration_only:true,
+    }),
+  }))
+  await choose(page)
+  await expect(page.getByRole('button',{name:'生成 AI 内容',exact:true})).toBeDisabled()
+  await expect(page.getByText('AI 图片生成',{exact:true})).toBeVisible()
+  await expect(page.getByText('未配置图片 API Key；请在服务端 .env 配置后重启。',{exact:true})).toBeVisible()
+  await page.goto('/settings')
+  await expect(page.getByText('OpenAI 图片服务',{exact:true})).toBeVisible()
+  await page.screenshot({path:'../storage/qa/mvp-configuration-missing.png',fullPage:true})
+})
+
+test('AI provenance and copy status render independently of current provider',async ({page}) => {
+  await choose(page)
+  const id = await generate(page)
+  const task = await (await page.request.get('/api/v1/generation/tasks/'+id)).json()
+  await page.route('**/api/v1/generation/tasks/'+id,route => route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({...task,is_mock:false,copy:{...task.copy,source:'openai'}}),
+  }))
+  await page.reload()
+  await expect(page.getByText('AI 生成结果',{exact:true})).toBeVisible()
+  await expect(page.getByText('AI 文案草稿',{exact:true})).toBeVisible()
+  await expect(page.getByText('Mock 演示结果',{exact:true})).toHaveCount(0)
+})

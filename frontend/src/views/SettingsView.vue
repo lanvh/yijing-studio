@@ -32,8 +32,18 @@ onMounted(load)
     />
     <section class="form-panel">
       <h2>图片服务</h2><p v-if="status">
-        <strong>{{ status.mock ? 'Mock 本地演示' : '当前配置未开放' }}</strong> · {{ status.available ? '服务可用' : '服务不可用' }}
-      </p><p>本轮只开放 Mock：生成本地示意图、保存任务、整理文案和下载素材包。无需 API Key，不调用付费服务。</p><el-button
+        <strong>{{ status.mock ? 'Mock 本地演示' : 'OpenAI 图片服务' }}</strong> · {{ status.available ? (status.mock ? '服务可用' : '配置就绪') : '服务不可用' }}
+      </p><p>{{ status?.message }}</p>
+      <p v-if="status?.mock">
+        当前图片生成使用本地示意图，无图片 API 费用。
+      </p>
+      <p v-else>
+        真实图片生成按服务商规则计费。这里的状态仅代表配置检查，实际访问权限、余额和可用性以生成请求为准。
+      </p>
+      <p v-if="status">
+        文案与商品分析：{{ status.copy_mode === 'openai' ? 'AI 服务' : '本地模板与资料整理' }} · {{ status.copy_available ? '配置就绪' : '缺少有效配置' }}
+      </p>
+      <p>API Key 仅在服务端环境变量中配置。页面不会显示或保存密钥。</p><el-button
         :loading="busy"
         @click="load"
       >
@@ -41,7 +51,7 @@ onMounted(load)
       </el-button>
     </section>
     <section class="form-panel">
-      <h2>素材与文案</h2><p>上传的模特和商品图片、任务结果仅供当前账户访问。任务保留创作时的资料副本，删除任务会移除对应副本与结果。</p><p>文案来自本地模板和你填写的商品信息，可继续编辑。系统仅检查图片文件是否可读取，尚不评估人物一致性、商品还原或美观度。</p><p>发布需由你手动操作。请使用有权使用的素材，并在发布前检查内容。</p>
+      <h2>素材与文案</h2><p>上传的模特和商品图片、任务结果仅供当前账户访问。任务保留创作时的资料副本，删除任务会移除对应副本与结果。</p><p>文案根据配置使用本地模板或 AI 服务，可继续编辑；AI 商品分析是待确认建议。系统仅检查图片文件是否可读取，尚不评估人物一致性、商品还原或美观度。</p><p>发布需由你手动操作。请使用有权使用的素材，并在发布前检查内容。</p>
     </section>
   </WorkspaceLayout>
 </template>

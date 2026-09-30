@@ -135,3 +135,24 @@ test('expired session redirects from model library to login', async ({ page }) =
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('alert')).toContainText('登录已失效')
 })
+
+
+test('generate fictional model reference, persist and use in creation', async ({page}) => {
+  const errors: string[] = []
+  page.on('pageerror', e => errors.push(e.message))
+  const id = await createModel(page, 'Generated Model · QA ' + Date.now())
+  await expect(page.getByText('生成 Mock 参考图', {exact:true})).toBeVisible()
+  await page.getByRole('button', {name:'生成参考图',exact:true}).click()
+  await expect(page.getByText('生成的参考图已保存。',{exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'预览参考图 1'})).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button',{name:'预览参考图 1'})).toBeVisible()
+  await page.getByRole('button',{name:'预览参考图 1'}).scrollIntoViewIfNeeded()
+  await page.waitForFunction(() => [...document.querySelectorAll('.reference-preview-button img, .model-summary img')].every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))
+  await page.screenshot({path:'../storage/qa/mvp-generated-model.png',fullPage:true})
+  await page.getByRole('link',{name:'使用这个模特创建内容 →'}).click()
+  await expect(page.getByLabel('AI 模特',{exact:true})).toHaveValue(id)
+  await page.setViewportSize({width:390,height:844})
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(errors).toEqual([])
+})

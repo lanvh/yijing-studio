@@ -29,6 +29,7 @@ export interface Product extends Omit<ProductProfile, 'feature_notes'> {
   original_images: ProductImage[]
   processed_images: ProductImage[]
   product_features: {
+    ai_analysis?: { status: string; message?: string; findings?: { category: string; colors: string[]; pattern: string; logo_description: string; shape: string; material_appearance: string; critical_features: string[]; uncertainties: string[] } }
     confirmed: FeatureNotes
     analyzed_at: string
     image_observations: { image_id: string; width: number; height: number; palette: string[] }[]

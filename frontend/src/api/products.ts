@@ -9,14 +9,14 @@ export const productsApi = {
   update: async (id: string, profile: ProductProfile) =>
     (await api.patch<Product>('/products/' + id, profile)).data,
   remove: async (id: string) => { await api.delete('/products/' + id) },
-  analyze: async (id: string) => (await api.post<Product>('/products/' + id + '/analyze')).data,
+  analyze: async (id: string) => (await api.post<Product>('/products/' + id + '/analyze', {}, { timeout: 150000 })).data,
   removeImage: async (imageUrl: string) => (await api.delete<Product>(imageUrl.replace('/api/v1', ''))).data,
   upload: async (id: string, file: File, rightsConfirmed: boolean, progress: (value: number) => void) => {
     const form = new FormData()
     form.append('file', file)
     form.append('rights_confirmed', String(rightsConfirmed))
     return (await api.post<Product>('/products/' + id + '/images', form, {
-      timeout: 60000,
+      timeout: 150000,
       onUploadProgress: event => progress(Math.min(99, Math.round((event.progress || 0) * 100))),
     })).data
   },

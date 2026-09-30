@@ -1,7 +1,7 @@
 # AI Seed Studio
 
-> 当前已开放 Mock 完整工作流：创建内容 → 结果选择 → 文案编辑 → ZIP 下载。
-> 真实图片服务按用户要求暂缓；最新启动与恢复说明见文末“当前可用版本”。
+> 当前已补齐完整 MVP 的软件接入：Mock/真实图片、模特参考图、AI 分析与文案、素材导出。
+> 本机已选择 OpenAI 官方服务；尚缺 API Key，真实服务实测待完成。最新配置见文末“完整 MVP 接入版”。
 
 AI Seed Studio 是一个 AI 虚拟模特与商品种草内容生成平台。
 
@@ -521,3 +521,83 @@ powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
 
 浏览器测试使用本地 .env 管理员登录及合成图片，结束后清理自己创建的对象。
 截图保存在 storage/qa/workflow-*.png。完整交付说明见 MOCK_WORKFLOW_REPORT.md。
+
+
+## 完整 MVP 接入版（2026-10-01）
+
+在 Mock 闭环基础上，已实现 OpenAI 官方图片 Provider、虚拟模特参考图生成、
+AI 商品视觉建议、AI 文案与明确的失败回退；所有功能保留 Mock / 本地模式。
+真实 Provider 请求格式和业务链路已由离线传输测试验证。
+**本机已切换为 OpenAI 官方服务，但未配置真实 API Key，尚未进行实际出图和效果验收。**
+此前“只做 Mock / 真实 Provider 暂缓”章节属于历史范围，当前以本节为准。
+
+### 免费本地模式（模板默认，可随时切换）
+
+```dotenv
+IMAGE_PROVIDER=mock
+LLM_PROVIDER=local
+```
+
+不用填写任何 AI Key。模特详情的“生成参考图”也可以生成 Mock 示意参考图，
+并在创建内容时使用；本地文案和导出继续可用。Mock 不等于真实换装能力。
+
+### 启用 OpenAI 官方服务
+
+在本机 .env 填写，勿把密钥提交到 Git 或发送到聊天：
+
+```dotenv
+IMAGE_PROVIDER=openai
+IMAGE_API_KEY=你的图片服务密钥
+IMAGE_API_BASE_URL=https://api.openai.com/v1
+IMAGE_MODEL=gpt-image-2.5-sunburst
+IMAGE_QUALITY=low
+IMAGE_API_TIMEOUT_SECONDS=180
+LLM_PROVIDER=openai
+LLM_API_KEY=你的文本服务密钥
+LLM_API_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4.1-mini
+LLM_TIMEOUT_SECONDS=60
+```
+
+LLM_API_KEY 留空时复用 IMAGE_API_KEY；图片和文字服务可分别启用。
+模型名称只在服务端环境配置，普通创作页面不暴露参数。
+当前官方适配仅允许 https://api.openai.com/v1，不将密钥转发到任意兼容地址。
+图片尺寸沿用 768×1024；默认模型支持该尺寸，自行更换模型时需要确认其尺寸能力。
+图片服务用 Images API；商品分析与文案使用 Responses API 结构化输出。
+
+修改配置后执行 stop-local.ps1 和 start-local.ps1。设置页只检查配置，
+不会为检测可用性发起付费生成；“配置就绪”不代表账户权限或余额已通过远端验证。
+真实调用按供应商实际用量计费；软件不自动重试付费请求，不把失败伪装成 Mock 成功。
+不保证按固定单张价格计费；图片输入、输出、文字用量及所选质量共同影响费用。
+
+### 新增入口与行为
+
+- 模特详情 → 生成参考图：生成一张原创虚拟成人形象并保存，最多同时执行一个请求；
+  以 request_key 防止同一提交重复生成，使用模型元数据保存执行租期和结果标识。
+- 模特 / 商品详情 → 使用该素材创建内容：创建页自动选择对应资料。
+- 启用 LLM_PROVIDER=openai 后，商品上传成功或“重新整理特征”会分析最多前 4 张预览图；
+  AI 建议单独保存到 product_features.ai_analysis，不覆盖人工确认值。
+  商品编辑或图片变更会使旧建议失效；分析失败仍保留上传图片，可手动重试。
+- 任务成功后自动生成文案；AI 调用失败则保存 source=local_fallback 的本地草稿，
+  页面明确提示回退。手动重新生成失败会保留原文案。
+- AI 文案只使用已提供商品资料，AI 视觉建议不当作事实输入文案；
+  提示词约束并过滤部分无依据体验/承诺，最终仍需人工核对。
+- 结果页面按任务本身显示 Mock / AI 来源，即使当前服务配置改变，也不误标旧任务。
+- ZIP manifest 保存 provider、逐图 model、时间、AI/Mock 标识与文件校验信息；
+  不包含 API Key、内部文件路径或未经验证的金钱成本。
+- 工作台增加本周任务与成功任务；本周从 UTC 周一 00:00 开始。
+- 真实任务租期为图片超时 × 2 + 文案超时 + 60 秒；默认 480 秒。
+  未执行成功的任务可在过期后显式重试，最多 3 次尝试；重试可能再次计费。
+
+### 验收边界
+
+运行原有验证命令即可。pytest 默认强制 Mock/本地文案，
+真实适配测试使用 httpx.MockTransport，不会消费真实 API 额度。
+浏览器测试通过全局前置检查强制本地 Mock / 本地文案模式；付费模式下自动停止，不执行上传/生成。
+软件代码已补齐 MVP 范围；真实出图、人物一致性和商品还原的人工验收仍需有效 Key、
+账户权限和真实素材。详情见 MVP_IMPLEMENTATION_REPORT.md。
+
+参考官方文档：
+- [图片生成与参考图编辑](https://developers.openai.com/api/docs/guides/image-generation)
+- [结构化输出](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [图片理解](https://developers.openai.com/api/docs/guides/images-vision)
