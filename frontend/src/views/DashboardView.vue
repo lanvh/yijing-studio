@@ -1,7 +1,22 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { modelsApi } from '../api/models'
+import { productsApi } from '../api/products'
+import { generationApi } from '../api/generation'
+import { errorMessage } from '../api/client'
+import { statusLabels, type TaskSummary } from '../types/generation'
 import WorkspaceLayout from '../layouts/WorkspaceLayout.vue'
 import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
+const counts = ref<number[] | null>(null), recent = ref<TaskSummary[]>([]), error = ref('')
+async function load() {
+  error.value = ''
+  try {
+    const [models,products,tasks] = await Promise.all([modelsApi.list('',0,1),productsApi.list('','',0,1),generationApi.list(0,5)])
+    counts.value = [models.total, products.total, tasks.total]; recent.value = tasks.items
+  } catch (cause) { error.value = errorMessage(cause) }
+}
+onMounted(load)
 </script>
 <template>
   <WorkspaceLayout title="工作台">
@@ -12,7 +27,7 @@ const auth = useAuthStore()
         </p><h1>你好，{{ auth.user?.display_name }}。</h1><p class="muted">
           欢迎来到你的 AI 摄影棚。好作品，从这里开始。
         </p>
-      </div><span class="version-pill">早期预览</span>
+      </div><span class="version-pill">Mock 工作流</span>
     </div>
     <section class="welcome-card">
       <div>
@@ -33,7 +48,7 @@ const auth = useAuthStore()
       </div>
     </section>
     <div class="section-title">
-      <h2>创作，从这三步开始</h2><span class="muted">功能将逐步开放</span>
+      <h2>创作，从这三步开始</h2><span class="muted">素材 → 生成 → 整理与下载</span>
     </div>
     <section
       class="journey-grid"
@@ -55,13 +70,69 @@ const auth = useAuthStore()
           管理商品库 →
         </router-link>
       </article>
-      <article><span class="step-number">03 / CREATE</span><span class="journey-icon">✧</span><h3>把想法变成作品</h3><p>搭配人物与场景，探索新的可能。</p><span class="muted">准备中</span></article>
+      <article>
+        <span class="step-number">03 / CREATE</span><span class="journey-icon">✧</span><h3>把想法变成作品</h3><p>搭配人物与场景，探索新的可能。</p><router-link
+          class="next-label"
+          to="/create-content"
+        >
+          创建 Mock 内容 →
+        </router-link>
+      </article>
+    </section>
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      :closable="false"
+    />
+    <el-button
+      v-if="error"
+      @click="load"
+    >
+      重新加载工作台
+    </el-button>
+    <section
+      v-if="counts"
+      class="stat-grid"
+    >
+      <router-link to="/models">
+        AI 模特<strong>{{ counts[0] }}</strong>
+      </router-link>
+      <router-link to="/products">
+        商品资料<strong>{{ counts[1] }}</strong>
+      </router-link>
+      <router-link to="/tasks">
+        创作任务<strong>{{ counts[2] }}</strong>
+      </router-link>
     </section>
     <section class="recent-section">
       <div class="section-title">
-        <h2>最近创作</h2><span class="muted">你的作品将出现在这里</span>
-      </div><div class="empty-state">
-        <span>▧</span><div><h3>故事，等待开场</h3><p>创作功能开放后，在这里查看和管理你的素材。</p></div>
+        <h2>最近创作</h2><router-link to="/tasks">
+          查看全部 →
+        </router-link>
+      </div>
+      <div
+        v-if="recent.length"
+        class="task-list"
+      >
+        <router-link
+          v-for="task in recent"
+          :key="task.id"
+          class="task-row"
+          :to="'/tasks/' + task.id"
+        >
+          <div class="task-symbol">
+            ✧
+          </div><div class="task-row-main">
+            <h2>{{ task.product_name }}</h2><p>{{ task.model_name }} · Mock · {{ task.result_count }} 张结果</p>
+          </div><span :class="['task-status',task.status]">{{ statusLabels[task.status] }}</span>
+        </router-link>
+      </div>
+      <div
+        v-else-if="counts"
+        class="empty-state"
+      >
+        <span>▧</span><div><h3>故事，等待开场</h3><p>从创建内容开始，生成后在这里继续整理与下载。</p></div>
       </div>
     </section>
     <footer class="dashboard-footer">

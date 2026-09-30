@@ -157,3 +157,41 @@ operations=[]、requires_api_key=null；应用的登录和商品管理仍可正�
 
 本阶段尚不开放 /generation/tasks、/models/{id}/generate-reference 或结果下载 API。
 本地开发验收使用 python -m app.mock_job；业务任务 REST 接口属于 Phase 5。
+
+
+## 当前 Mock 工作流接口（Phase 5–8、10、11）
+
+所有下列路径均带 /api/v1 前缀，需要登录。写请求沿用 X-Requested-With 和 Origin 校验。
+跨账户一律 404（管理员无旁路），私有响应使用 no-store。
+
+- GET /generation/options：场景、风格、姿势与张数选项。
+- POST /generation/tasks：model_id、product_id 必填；scene、style、pose、requested_count
+  有默认值；request_key 是可选 UUID（建议客户端提供，保持重试幂等）。
+  请求不得指定 provider、prompt、文件路径或 user_id。同步执行后返回 201 和任务；
+  生成失败以任务 status=FAILED/PARTIAL 表达，仍保留任务可查看。
+- GET /generation/tasks：返回 items、total、offset、limit；可按 status 筛选；
+  limit 1–100，默认 24，offset >= 0。
+- GET /generation/tasks/{id}：返回摘要、results 和 copy；包含 is_active、can_retry、
+  attempt、result_count；model_name/product_name 来自快照，原始对象删除后 ID 可为 null。
+- POST /generation/tasks/{id}/retry：PENDING、FAILED、PARTIAL 或租期过期的 PROCESSING
+  可重试，最多 3 次尝试，补齐剩余数量。正在执行/已完成/超限返回 409。
+- DELETE /generation/tasks/{id}：返回 204，删除任务、关联文案和私有图片。
+- GET /generation/tasks/{id}/results：结果数组；metadata.file_check 表示文件检查。
+- GET /generation/results/{id}/image：返回私有 JPEG/PNG 原始结果。
+- PATCH /generation/results/{id}：仅接收 is_selected 严格布尔值。
+- DELETE /generation/results/{id}：返回 204。人工删除不改变任务历史生成状态。
+- GET /generation/tasks/{id}/copy：返回文案对象，尚未生成时为 null。
+- POST /generation/tasks/{id}/copy：重新生成本地模板草稿，覆盖已有文案。
+- PATCH /generation/tasks/{id}/copy：保存完整文案，必传 title（1–200）、
+  caption（1–5000）、hashtags（最多 20 条，每条 1–60 字）、
+  product_summary（最多 2000）、styling_notes（最多 2000）。
+  source 由服务端设置为 user_edited，模板稿为 local_template。
+- GET 或 POST /generation/tasks/{id}/export：即时 ZIP 下载；至少选择一张图片并已有文案，
+  否则 422。包中包含 01_cover.jpg、后续 NN_image.jpg（PNG 时对应 png 扩展名）、
+  title.txt、caption.txt、hashtags.txt、product_summary.txt、styling_notes.txt、
+  product.json、manifest.json、README.txt。
+  manifest 明确标注 mock=true、real_generation=false、导出数量和逐图文件哈希。
+
+任务资料与参考图存储路径不通过 REST 返回。
+Mock 失败注入仅用于本地单元测试，不提供 HTTP 参数或测试后门。
+/models/{id}/generate-reference 与真实图片 Provider 仍未开放。

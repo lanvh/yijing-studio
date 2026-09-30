@@ -15,6 +15,10 @@ export const router = createRouter({
     { path: '/products/create', name: 'product-create', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
     { path: '/products/:id/edit', name: 'product-edit', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
     { path: '/products/:id', name: 'product-detail', component: () => import('../views/ProductDetailView.vue'), meta: { requiresAuth: true } },
+    { path: '/create-content', name: 'create-content', component: () => import('../views/CreateContentView.vue'), meta: { requiresAuth: true } },
+    { path: '/tasks', name: 'tasks', component: () => import('../views/TasksView.vue'), meta: { requiresAuth: true } },
+    { path: '/tasks/:id', name: 'task-detail', component: () => import('../views/TaskDetailView.vue'), meta: { requiresAuth: true } },
+    { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })

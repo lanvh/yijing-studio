@@ -3,3 +3,5 @@ from app.models.product import Product, ProductImage
 from app.models.user import AuthSession, User
 
 __all__ = ["AIModel", "AIModelImage", "AuthSession", "User", "Product", "ProductImage"]
+
+from app.models.generation import ContentCopy, GenerationResult, GenerationTask  # noqa: F401

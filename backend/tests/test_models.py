@@ -220,7 +220,14 @@ def test_invalid_uploads_leave_no_records_or_files(
     status,
 ):
     assert upload(signed_in, model["id"], name=name, mime=mime, data=data).status_code == status
-    assert db.scalar(select(func.count()).select_from(AIModelImage)) == 0
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(AIModelImage)
+            .where(AIModelImage.model_id == uuid.UUID(model["id"]))
+        )
+        == 0
+    )
     assert not list(isolated_storage.rglob("*.jpg"))
 
 
@@ -264,7 +271,14 @@ def test_delete_model_cascades_images_and_cleans_files(signed_in, model, db, iso
     image = upload(signed_in, model["id"]).json()
     assert signed_in.delete(f"/api/v1/models/{model['id']}").status_code == 204
     assert db.get(AIModel, uuid.UUID(model["id"])) is None
-    assert db.scalar(select(func.count()).select_from(AIModelImage)) == 0
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(AIModelImage)
+            .where(AIModelImage.model_id == uuid.UUID(model["id"]))
+        )
+        == 0
+    )
     assert signed_in.get(image["image_url"]).status_code == 404
     assert not list(isolated_storage.rglob("*.jpg"))
 
@@ -288,7 +302,14 @@ def test_failed_storage_write_leaves_no_image(signed_in, model, db, monkeypatch)
 
     monkeypatch.setattr(LocalImageStorage, "put", fail_write)
     assert upload(signed_in, model["id"]).status_code == 503
-    assert db.scalar(select(func.count()).select_from(AIModelImage)) == 0
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(AIModelImage)
+            .where(AIModelImage.model_id == uuid.UUID(model["id"]))
+        )
+        == 0
+    )
 
 
 def test_mutation_csrf_and_missing_ids(signed_in, model):

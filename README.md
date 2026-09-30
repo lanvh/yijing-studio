@@ -1,5 +1,8 @@
 # AI Seed Studio
 
+> 当前已开放 Mock 完整工作流：创建内容 → 结果选择 → 文案编辑 → ZIP 下载。
+> 真实图片服务按用户要求暂缓；最新启动与恢复说明见文末“当前可用版本”。
+
 AI Seed Studio 是一个 AI 虚拟模特与商品种草内容生成平台。
 
 用户可以创建 AI 人物，上传服饰、鞋子、包、首饰、手表等商品，并生成 AI 模特穿戴这些商品的种草图片。
@@ -450,4 +453,71 @@ generate_content_set（默认）。可选 --count：1、2、4、6；--seed 用�
 
 Mock 不执行真实人物创建、试穿、图片编辑或场景生成，仅验证调用与结果交付链路。
 没有新增运行依赖，演示文件保存在项目 D 盘 storage 内。
-完整实现与验证结果见 PHASE_4_REPORT.md。下一阶段是 Phase 5 生成任务，尚未开始。
+完整实现与验证结果见 PHASE_4_REPORT.md。Phase 5 及之后的当前实现见下文。
+
+
+## 当前可用版本：Mock 完整工作流（2026-10-01）
+
+已完成 Phase 5–8、Phase 10 基础文件检查，以及本轮 Phase 11 稳定性处理。
+依照用户要求，Phase 9 真实图片服务暂缓，不需要 API Key。
+上文各 Phase 章节是历史记录，当前入口以本节为准。
+
+1. 登录后，在 AI 模特与商品库中分别创建资料并上传图片。
+2. 打开 http://localhost:5173/create-content，选择模特、商品、场景、风格、姿势和 1/2/4/6 张。
+3. 提交后进入结果页：预览、选择或删除图片，编辑标题、正文、标签、摘要和搭配建议。
+4. 保存文案后下载 ZIP。下载包仅包含选中图片，第一张为封面，另附文案、商品快照与 manifest。
+5. 在 http://localhost:5173/tasks 查看历史任务；失败或部分完成可手动重试补齐，最多 3 次尝试。
+6. http://localhost:5173/settings 显示当前 Mock 服务状态。
+
+图片是带有明显 MOCK 标记的本地示意图，未渲染参考人物或商品。
+文案采用本地模板，只引用已填写的资料，不使用 LLM、不编造试穿体验。
+文件检查仅检查解码、格式、尺寸、大小和哈希，不评估人物一致性、商品还原或美观。
+结果中的 quality_score=100 仅表示文件检查通过；其余四项视觉评分为 null。
+
+### 启动与升级
+
+项目目录：D:\AiProject\codex\ai-seed-studio-docs。先启动 Docker Desktop，再运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/stop-local.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
+```
+
+启动脚本会执行 alembic upgrade head；当前迁移 0004 增加 generation_tasks、
+generation_results、content_copy 三张表，保留原有数据。不需要安装新的运行依赖。
+.env 与管理员账户继续沿用；创建账户方法见本 README 之前的登录章节。
+若 Docker 未运行，启动脚本会报告数据库启动失败；启动 Docker Desktop 后重新执行即可。
+
+### 任务执行与恢复
+
+当前为同步 MVP：请求在线程池中执行，生成前提交任务和 PROCESSING 状态，
+生成完成再提交结果；生成期间不持有数据库行锁。
+默认超时 30 秒，执行租期为“配置超时 × 2 + 60 秒”，默认 120 秒。
+页面离开不删除任务。若进程中断，租期过后可从结果页手动重试，不会自动启动后台队列。
+每个任务最多尝试 3 次；部分成功只补齐缺失数量，保留成功图片与已编辑文案。
+同一 request_key 的重复提交返回同一任务；更改参数但复用 key 返回 409。
+网页一次提交超时后，在参数不变的情况下再次提交沿用同一个 key。
+
+任务持有独立的资料和参考图快照；每类按现有顺序使用前 8 张图。
+删除或编辑原始模特/商品，不影响已有任务、重试或导出。
+文件保存在 storage/tasks/<用户 UUID>/<任务 UUID>/，受登录与所有权校验保护。
+删除任务会清理输入副本、结果与文案。ZIP 在内存中生成，不在磁盘重复留存下载包。
+数据库与文件系统不具备跨资源原子性；写入/提交失败会回收本次新文件，
+清理失败会写日志，硬中断可能遗留不可公开访问的孤立文件，尚未实现定时清理。
+正在执行的任务不能删除/修改结果，过期执行结果不能覆盖新的重试。
+
+### 验证
+
+```powershell
+# 在 backend 目录
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m alembic check
+# 在项目根目录
+backend\.venv\Scripts\ruff.exe check backend
+powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run lint
+powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run build
+powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
+```
+
+浏览器测试使用本地 .env 管理员登录及合成图片，结束后清理自己创建的对象。
+截图保存在 storage/qa/workflow-*.png。完整交付说明见 MOCK_WORKFLOW_REPORT.md。

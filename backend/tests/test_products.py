@@ -236,7 +236,14 @@ def test_delete_product_cleans_both_files(signed, product, db, storage):
     upload(signed, product)
     assert signed.delete("/api/v1/products/" + product["id"]).status_code == 204
     assert files(storage) == []
-    assert db.scalar(select(func.count()).select_from(ProductImage)) == 0
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(ProductImage)
+            .where(ProductImage.product_id == uuid.UUID(product["id"]))
+        )
+        == 0
+    )
 
 
 def test_second_file_failure_cleans_first(signed, product, db, storage, monkeypatch):
@@ -253,7 +260,14 @@ def test_second_file_failure_cleans_first(signed, product, db, storage, monkeypa
     monkeypatch.setattr(LocalImageStorage, "put", fail_second)
     assert upload(signed, product).status_code == 503
     assert files(storage) == []
-    assert db.scalar(select(func.count()).select_from(ProductImage)) == 0
+    assert (
+        db.scalar(
+            select(func.count())
+            .select_from(ProductImage)
+            .where(ProductImage.product_id == uuid.UUID(product["id"]))
+        )
+        == 0
+    )
 
 
 def test_commit_failure_cleans_both_files(signed, product, db, storage, monkeypatch):

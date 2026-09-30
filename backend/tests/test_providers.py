@@ -303,8 +303,8 @@ def test_provider_status_authentication_and_configuration(client, user, monkeypa
     response = client.get("/api/v1/providers")
     assert response.json()["available"] is False
     assert response.json()["operations"] == []
-    # Business task endpoints remain reserved for Phase 5.
-    assert client.post("/api/v1/generation/tasks", json={}).status_code == 404
+    # Business task endpoint is open and validates the required input.
+    assert client.post("/api/v1/generation/tasks", json={}).status_code == 422
 
 
 def test_provider_job_id_allows_vendor_native_identifiers():

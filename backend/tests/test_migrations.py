@@ -26,6 +26,9 @@ def test_migration_upgrade_downgrade_in_isolated_schema():
                 "alembic_version",
                 "products",
                 "product_images",
+                "generation_tasks",
+                "generation_results",
+                "content_copy",
             } <= set(tables)
             command.check(config)
             command.downgrade(config, "base")

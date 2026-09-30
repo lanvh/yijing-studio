@@ -54,12 +54,24 @@ async function logout() {
         >
           <span>◇</span> 商品库
         </router-link>
-        <div class="nav-future">
+        <router-link
+          to="/create-content"
+          :class="{ 'nav-active': route.path === '/create-content' }"
+        >
           <span>✧</span> 创建内容
-        </div>
-        <div class="nav-future">
+        </router-link>
+        <router-link
+          to="/tasks"
+          :class="{ 'nav-active': route.path.startsWith('/tasks') }"
+        >
           <span>▤</span> 生成记录
-        </div>
+        </router-link>
+        <router-link
+          to="/settings"
+          :class="{ 'nav-active': route.path === '/settings' }"
+        >
+          <span>⚙</span> 系统状态
+        </router-link>
       </nav>
       <div class="sidebar-bottom">
         <span class="status-dot" /> 私人创作空间<p>从灵感开始，慢慢成形。</p>
@@ -90,6 +102,15 @@ async function logout() {
           AI 模特
         </router-link><router-link to="/products">
           商品库
+        </router-link>
+        <router-link to="/create-content">
+          创建内容
+        </router-link>
+        <router-link to="/tasks">
+          生成记录
+        </router-link>
+        <router-link to="/settings">
+          系统状态
         </router-link>
       </nav>
       <div class="dashboard-content">
