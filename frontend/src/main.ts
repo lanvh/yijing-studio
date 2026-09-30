@@ -6,6 +6,7 @@ import { router } from './router'
 import App from './App.vue'
 import './style.css'
 import './models.css'
+import './products.css'
 import { api } from './api/client'
 import { useAuthStore } from './stores/auth'
 

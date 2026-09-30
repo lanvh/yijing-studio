@@ -102,3 +102,34 @@ GET /providers
 跨用户对象访问与不存在对象统一返回 404；没有管理员跨用户旁路。
 未登录返回 401；请求过大 413；格式不匹配 415；字段/内容无效 422；参考图达到上限 409。
 客户端不能写入 user_id、character_prompt、negative_prompt 或 provider_metadata。
+
+
+## Phase 3 实现约定
+
+- GET /products 返回 {items, total, limit, offset}；支持 q（名称或品牌的包含搜索）、
+  category（可选，精确匹配）、limit（1–100，默认 24）、offset（默认 0）。
+- POST /products 返回 201；GET /products/{id}、PATCH /products/{id} 返回完整商品；
+  DELETE /products/{id} 返回 204，并清理关联原图和预览图。
+- 支持类别：top、bottom、dress、shoes、bag、necklace、bracelet、ring、watch、hat、other。
+- 创建字段：name、category 必填；brand、color、description 选填。
+  feature_notes 可包含 material、pattern、logo_description、shape、critical_features。
+  这些字段表示用户确认的资料。PATCH 只修改显式提交的字段，嵌套 feature_notes 按字段合并；
+  文本用空字符串清空，critical_features 用空数组清空，不接受显式 null。
+- 客户端不能写入 user_id、id、product_features、图片路径或分析来源。
+- GET /products/options 返回 categories、max_image_size_mb、max_product_images。
+- POST /products/{id}/images：multipart 的 file、rights_confirmed=true；
+  声明仅指拥有商品图片使用权或已获授权。成功返回 201 和更新后的完整商品。
+- 商品响应包含 original_images、processed_images，每次上传各增加一条。
+  metadata 中的 pair_id 将两条记录关联，processed 的 original_image_id 指向原图。
+- GET /products/{id}/images/{image_id}：原图以 attachment 返回，内容保持上传字节；
+  预览图返回方向修正、去元数据、白底合成后的 JPEG。均要求所有权，
+  设置 Cache-Control: no-store、X-Content-Type-Options: nosniff。
+- DELETE /products/{id}/images/{image_id}：传原图或预览图 ID 均删除整对图片，
+  返回 200 和更新后的完整商品，特征中的图片观察同步移除。
+- POST /products/{id}/analyze 返回重新整理后的完整商品。
+  ProductAnalyzer 当前采用 local_evidence_v1：用户字段 + 全图像素色板，
+  保存来源、版本与整理时间；material_guess 始终为 null。
+  图片色板含背景，不表示商品主色。不执行 AI 视觉识别、抠图或图片生成。
+
+本阶段继承登录、同源写请求和所有权校验。商品图片默认最多 8 次上传（16 条原图/预览记录）；
+格式、像素和文件大小限制复用 Phase 2。错误状态沿用 401/403/404/409/413/415/422/503。

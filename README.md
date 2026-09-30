@@ -106,11 +106,12 @@ Analytics
 
 AI Fashion Content Studio
 
-## 当前进度：Phase 0 / Phase 1 / Phase 2
+## 当前进度：Phase 0 / Phase 1 / Phase 2 / Phase 3
 
 已完成项目初始化、账号创建、登录、会话查询、退出与受保护工作台。
-已完成 AI 模特 CRUD 与参考图片管理。未开放注册；商品、生成、文案、下载尚未实现。
-本次止于 Phase 2；经用户确认后再进入 Phase 3。
+已完成 AI 模特 CRUD、参考图片管理、商品 CRUD、商品图片预览与原图下载。
+未开放注册；图片生成、文案和整套素材导出尚未实现。
+本次止于 Phase 3；经用户确认后再进入 Phase 4。
 
 ### 实际目录
 
@@ -263,7 +264,7 @@ Cookie 为 HttpOnly、SameSite=Strict，服务端仅保存随机 token 的 SHA-2
 退出即撤销，重新登录轮换当前 session。会话默认有效期 1440 分钟。
 所有写请求必须带 `X-Requested-With: AISeedStudio`；
 浏览器 Origin 必须匹配 FRONTEND_URL，Axios 已配置该头。
-前端不把凭据放入 localStorage。当前工作台提供 AI 模特库入口；商品与生成等功能仍未开放。
+前端不把凭据放入 localStorage。当前工作台提供 AI 模特库入口；商品库也已开放，生成功能仍未开放。
 
 本配置仅绑定回环地址，供本地开发使用；尚非生产部署配置。
 生产环境应使用 HTTPS、COOKIE_SECURE=true，并在网关配置登录限流。
@@ -284,7 +285,7 @@ powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
 后端测试使用真实 PostgreSQL，每个认证测试使用可回滚事务，migration 测试使用独立临时 schema；
 测试前显式升级 schema。仅对本地开发数据库运行。
 浏览器测试使用本机 Edge；需先启动服务，并在根目录 .env 提供 ADMIN_EMAIL/ADMIN_PASSWORD。
-无 AI API Key 不影响上述启动和验证。Phase 0/1 历史记录见 PHASE_0_1_REPORT.md，当前阶段见 PHASE_2_REPORT.md。
+无 AI API Key 不影响上述启动和验证。Phase 0/1 历史记录见 PHASE_0_1_REPORT.md，Phase 2 历史见 PHASE_2_REPORT.md，当前阶段见 PHASE_3_REPORT.md。
 
 ## Phase 2：AI 模特库
 
@@ -340,10 +341,50 @@ powershell -ExecutionPolicy Bypass -File scripts/stop-local.ps1
 powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
 
-启动脚本显式执行 migration 0002，新增 ai_models 与 ai_model_images，不改变已有登录账号。
+Phase 2 引入 migration 0002，新增 ai_models 与 ai_model_images，不改变已有登录账号。
 测试命令继续使用上面的 pytest、ruff、alembic check、前端 lint/build/test:e2e。
 浏览器验收使用合成图片，完成后清理它自己创建的测试模特和图片，
 不会把测试占位图当作真实生成结果。验收截图在 storage/qa/phase2-*.png。
 
 详细改动、结果与边界见 PHASE_2_REPORT.md。
-下一阶段是 Phase 3 商品 CRUD，本次未开始。
+Phase 3 商品 CRUD 已完成，见下文。
+
+
+## Phase 3：商品库
+
+已实现 /products、/products/create、/products/:id、/products/:id/edit：
+商品创建、详情、编辑、删除、名称/品牌搜索、类别筛选、分页、图片预览和原图下载。
+支持上衣、下装、连衣裙、鞋履、包袋、项链、手链、戒指、手表、帽子和其他，共 11 类。
+
+操作顺序：登录 → 商品库 → 新建商品 → 保存资料 → 确认图片使用权 → 上传商品图片。
+已有登录账号继续使用；首次创建账号沿用上文的 create-user 命令。
+保存时自动整理用户提供的特征，上传后增加图片色板，也可点击“重新整理特征”。
+材质、图案、Logo、形状与关键细节均来自用户填写；不确定的信息可以留空。
+当前没有 AI 商品识别；整图色板包括背景，不能当作商品主色。
+
+商品图片私有存储在 storage/products/<用户 UUID>/<商品 UUID>/，
+每次上传保留原文件，并另外保存经过 EXIF 方向修正、元数据清理和白底合成的 JPEG 预览。
+原文件可能包含原有元数据，仅通过登录鉴权的下载端点返回。
+移除图片会成对清理原图和预览图；删除商品会清理全部关联图片。
+上传第二份文件失败或数据库提交失败时回收新文件；删除时先提交数据库再清理文件，
+磁盘清理失败会记录日志，API 中不再暴露已删除对象。数据库与文件系统不具备跨资源原子性。
+图片未经自动内容审核，metadata 中保留 not_screened 标记。
+
+.env 新增可选 MAX_PRODUCT_IMAGES（默认 8），按原始上传张数计数；
+共用 Phase 2 的大小、格式和像素限制。现有 .env 无需改动。
+无新增开发依赖，无需 AI API Key。
+
+启动或升级（项目根目录，先启动 Docker Desktop）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/stop-local.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
+```
+
+启动脚本执行 alembic upgrade head，当前迁移 0003 新增 products、product_images，
+保留已有用户、模特和参考图。访问 http://localhost:5173/products；
+API 文档 http://localhost:8000/docs。验证命令沿用上文。
+
+验收覆盖上衣、运动鞋、手表、项链、包袋；使用明确的合成示意图，
+测试结束清理自己创建的商品及图片。桌面与移动截图位于 storage/qa/phase3-*.png。
+详见 PHASE_3_REPORT.md。下一阶段 Phase 4（Mock Image Provider）尚未开始。

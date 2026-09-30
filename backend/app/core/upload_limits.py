@@ -14,7 +14,7 @@ class UploadSizeLimitMiddleware:
         if not (
             scope["type"] == "http"
             and scope["method"] == "POST"
-            and scope["path"].startswith("/api/v1/models/")
+            and scope["path"].startswith(("/api/v1/models/", "/api/v1/products/"))
             and scope["path"].endswith("/images")
         ):
             return await self.app(scope, receive, send)

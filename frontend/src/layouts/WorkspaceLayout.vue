@@ -48,9 +48,12 @@ async function logout() {
         >
           <span>♧</span> AI 模特
         </router-link>
-        <div class="nav-future">
-          <span>◇</span> 商品库 <small>即将开放</small>
-        </div>
+        <router-link
+          to="/products"
+          :class="{ 'nav-active': route.path.startsWith('/products') }"
+        >
+          <span>◇</span> 商品库
+        </router-link>
         <div class="nav-future">
           <span>✧</span> 创建内容
         </div>
@@ -85,6 +88,8 @@ async function logout() {
           工作台
         </router-link><router-link to="/models">
           AI 模特
+        </router-link><router-link to="/products">
+          商品库
         </router-link>
       </nav>
       <div class="dashboard-content">

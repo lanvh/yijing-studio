@@ -20,6 +20,8 @@ class UploadRejected(Exception):
 class ValidatedImage:
     data: bytes
     metadata: dict
+    original_data: bytes
+    original_extension: str
 
 
 def validate_reference(upload: UploadFile) -> ValidatedImage:
@@ -87,4 +89,6 @@ def validate_reference(upload: UploadFile) -> ValidatedImage:
             "original_sha256": hashlib.sha256(raw).hexdigest(),
             "original_mime_type": expected_mime,
         },
+        raw,
+        {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}[expected_format],
     )

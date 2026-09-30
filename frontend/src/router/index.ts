@@ -11,6 +11,10 @@ export const router = createRouter({
     { path: '/models/create', name: 'model-create', component: () => import('../views/ModelFormView.vue'), meta: { requiresAuth: true } },
     { path: '/models/:id/edit', name: 'model-edit', component: () => import('../views/ModelFormView.vue'), meta: { requiresAuth: true } },
     { path: '/models/:id', name: 'model-detail', component: () => import('../views/ModelDetailView.vue'), meta: { requiresAuth: true } },
+    { path: '/products', name: 'products', component: () => import('../views/ProductsView.vue'), meta: { requiresAuth: true } },
+    { path: '/products/create', name: 'product-create', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
+    { path: '/products/:id/edit', name: 'product-edit', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
+    { path: '/products/:id', name: 'product-detail', component: () => import('../views/ProductDetailView.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })

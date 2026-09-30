@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
-from app.models import AIModel, AIModelImage, AuthSession, User  # noqa: F401
+from app.models import AIModel, AIModelImage, AuthSession, Product, ProductImage, User  # noqa: F401
 
 config = context.config
 target_metadata = Base.metadata

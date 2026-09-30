@@ -47,7 +47,14 @@ const auth = useAuthStore()
           管理 AI 模特 →
         </router-link>
       </article>
-      <article><span class="step-number">02 / PRODUCT</span><span class="journey-icon">◇</span><h3>放入你的好物</h3><p>收集商品图片，让细节成为主角。</p><span class="muted">准备中</span></article>
+      <article>
+        <span class="step-number">02 / PRODUCT</span><span class="journey-icon">◇</span><h3>放入你的好物</h3><p>收集商品图片，让细节成为主角。</p><router-link
+          class="next-label"
+          to="/products"
+        >
+          管理商品库 →
+        </router-link>
+      </article>
       <article><span class="step-number">03 / CREATE</span><span class="journey-icon">✧</span><h3>把想法变成作品</h3><p>搭配人物与场景，探索新的可能。</p><span class="muted">准备中</span></article>
     </section>
     <section class="recent-section">

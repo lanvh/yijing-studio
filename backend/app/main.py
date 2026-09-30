@@ -8,11 +8,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.ai_models import router as models_router
 from app.api.auth import router as auth_router
+from app.api.products import router as products_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.upload_limits import UploadSizeLimitMiddleware
 from app.services.ai_models import ModelNotFound
 from app.services.image_uploads import UploadRejected
+from app.services.products import ProductNotFound
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
@@ -25,12 +27,18 @@ app.add_middleware(
 )
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(models_router, prefix="/api/v1")
+app.include_router(products_router, prefix="/api/v1")
 app.add_middleware(UploadSizeLimitMiddleware)
 
 
 @app.exception_handler(ModelNotFound)
 async def model_not_found(request: Request, exc: ModelNotFound):
     return JSONResponse(status_code=404, content={"detail": "模特或参考图不存在。"})
+
+
+@app.exception_handler(ProductNotFound)
+async def product_not_found(request: Request, exc: ProductNotFound):
+    return JSONResponse(status_code=404, content={"detail": "商品或商品图片不存在。"})
 
 
 @app.exception_handler(UploadRejected)
@@ -63,4 +71,6 @@ def ready():
         connection.execute(text("SELECT token_hash FROM auth_sessions LIMIT 0"))
         connection.execute(text("SELECT id FROM ai_models LIMIT 0"))
         connection.execute(text("SELECT id FROM ai_model_images LIMIT 0"))
+        connection.execute(text("SELECT id FROM products LIMIT 0"))
+        connection.execute(text("SELECT id FROM product_images LIMIT 0"))
     return {"status": "ok", "database": "ready"}
