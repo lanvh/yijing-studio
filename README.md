@@ -106,11 +106,11 @@ Analytics
 
 AI Fashion Content Studio
 
-## 当前进度：Phase 0 / Phase 1
+## 当前进度：Phase 0 / Phase 1 / Phase 2
 
 已完成项目初始化、账号创建、登录、会话查询、退出与受保护工作台。
-未开放注册；AI 模特、商品、生成、文案、下载功能尚未实现。
-须经用户确认后才进入 Phase 2。
+已完成 AI 模特 CRUD 与参考图片管理。未开放注册；商品、生成、文案、下载尚未实现。
+本次止于 Phase 2；经用户确认后再进入 Phase 3。
 
 ### 实际目录
 
@@ -263,7 +263,7 @@ Cookie 为 HttpOnly、SameSite=Strict，服务端仅保存随机 token 的 SHA-2
 退出即撤销，重新登录轮换当前 session。会话默认有效期 1440 分钟。
 所有写请求必须带 `X-Requested-With: AISeedStudio`；
 浏览器 Origin 必须匹配 FRONTEND_URL，Axios 已配置该头。
-前端不把凭据放入 localStorage。当前工作台只展示账号和后续功能说明。
+前端不把凭据放入 localStorage。当前工作台提供 AI 模特库入口；商品与生成等功能仍未开放。
 
 本配置仅绑定回环地址，供本地开发使用；尚非生产部署配置。
 生产环境应使用 HTTPS、COOKIE_SECURE=true，并在网关配置登录限流。
@@ -284,4 +284,66 @@ powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
 后端测试使用真实 PostgreSQL，每个认证测试使用可回滚事务，migration 测试使用独立临时 schema；
 测试前显式升级 schema。仅对本地开发数据库运行。
 浏览器测试使用本机 Edge；需先启动服务，并在根目录 .env 提供 ADMIN_EMAIL/ADMIN_PASSWORD。
-无 AI API Key 不影响上述启动和验证。详细结果及文件清单见 PHASE_0_1_REPORT.md。
+无 AI API Key 不影响上述启动和验证。Phase 0/1 历史记录见 PHASE_0_1_REPORT.md，当前阶段见 PHASE_2_REPORT.md。
+
+## Phase 2：AI 模特库
+
+已实现的页面：
+
+- /models：当前用户的模特库、名称搜索、分页、卡片封面、编辑与删除。
+- /models/create：创建成人虚拟模特配置。
+- /models/:id：资料详情、参考图上传、预览和移除。
+- /models/:id/edit：编辑基础信息；不改变已有参考图。
+
+操作顺序：登录 → AI 模特 → 新建模特 → 保存资料 → 确认参考图来源 → 上传图片。
+也可从工作台“新建 AI 模特”进入。未上传图片时显示明确的参考图空状态。
+
+本阶段字段包括名称、性别、成年年龄段、身高、体型、肤色、发型、发色、风格与描述。
+仅名称、性别、年龄段必填；身高可留空。数据库保留 character_prompt、
+negative_prompt、provider_metadata，当前不调用 Provider 或构造生成任务。
+
+### 参考图与本地存储
+
+- 支持静态 JPEG / PNG / WebP。扩展名、声明 MIME 与解码后的实际格式必须一致。
+- 默认每张最多 15 MiB、2400 万像素，每条边 32–8192 像素，每个模特最多 8 张。
+- 服务端限制整个上传请求大小（包含未提供 Content-Length 的分块请求），再校验文件。
+- Pillow 完整解码、修正 EXIF 方向、去除元数据后保存 JPEG；透明背景合成为白色。
+- 第一张参考图作为封面；移除第一张后，下一张自动成为封面。
+- 存储键为 models/<用户 UUID>/<模特 UUID>/<图片 UUID>.jpg，
+  不使用原始文件名，也不接受客户端指定存储路径。
+- 开发环境默认保存在项目根目录 storage/models/。
+  LOCAL_STORAGE_PATH 相对项目根目录解析；Compose 明确指定 /app/storage 并挂载根目录 storage/。
+- 图片通过带登录验证的 API 返回，未挂载公开的 /storage 静态目录。
+  数据查询、编辑、删除和图片读取均强制检查所属用户，管理员也不绕过所有权。
+- 文件写入失败不写入图片记录；数据库提交失败则清理新文件。
+  删除时先提交数据库，再清理文件。若磁盘删除失败，会记录服务端错误；
+  遗留文件不可通过 API 访问，需要根据日志清理。文件系统与数据库不支持跨资源原子事务。
+
+.env 可配置 MAX_IMAGE_SIZE_MB、MAX_IMAGE_PIXELS、MAX_MODEL_IMAGES、
+ALLOWED_IMAGE_TYPES、LOCAL_STORAGE_PATH，重启后生效。
+现有 .env 没有新字段时采用上述默认值。界面从 /models/options 读取上传限制。
+
+### 来源与审核边界
+
+上传前需要确认图片为有使用权的 AI 虚拟成人形象，非真人照片。
+确认时间、声明、原始与保存后内容哈希写入图片 metadata。
+ReferenceUploadPolicy 为后续内容审核保留调用点，当前只有声明检查；
+没有自动 NSFW、真人识别或年龄识别能力，metadata 如实记录 moderation_status=not_screened。
+
+### 升级与验证
+
+安装新增依赖后重启（请在项目根目录执行）：
+
+```powershell
+.\.tools\uv\bin\uv.exe pip install --python backend/.venv/Scripts/python.exe -r backend/requirements.lock
+powershell -ExecutionPolicy Bypass -File scripts/stop-local.ps1
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
+```
+
+启动脚本显式执行 migration 0002，新增 ai_models 与 ai_model_images，不改变已有登录账号。
+测试命令继续使用上面的 pytest、ruff、alembic check、前端 lint/build/test:e2e。
+浏览器验收使用合成图片，完成后清理它自己创建的测试模特和图片，
+不会把测试占位图当作真实生成结果。验收截图在 storage/qa/phase2-*.png。
+
+详细改动、结果与边界见 PHASE_2_REPORT.md。
+下一阶段是 Phase 3 商品 CRUD，本次未开始。

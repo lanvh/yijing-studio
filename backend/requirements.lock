@@ -58,6 +58,8 @@ opentelemetry-api==1.45.0
     # via fastapi
 packaging==26.3
     # via pytest
+pillow==12.3.0
+    # via ai-seed-studio (backend/pyproject.toml)
 pluggy==1.6.0
     # via pytest
 psycopg==3.3.6
@@ -85,6 +87,8 @@ python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn
+python-multipart==0.0.32
+    # via ai-seed-studio (backend/pyproject.toml)
 pyyaml==6.0.3
     # via uvicorn
 ruff==0.16.9

@@ -1,25 +1,12 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy.orm import Session
 
+from app.api.dependencies import Db, require_same_origin
 from app.core.config import get_settings
-from app.core.database import get_db
 from app.core.security import COOKIE_NAME
 from app.schemas.auth import LoginRequest, UserResponse
 from app.services.auth import AuthService, InvalidCredentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-Db = Annotated[Session, Depends(get_db)]
-
-
-def require_same_origin(request: Request) -> None:
-    # A custom header prevents HTML form CSRF. CORS only allows our frontend.
-    if request.headers.get("x-requested-with") != "AISeedStudio":
-        raise HTTPException(status_code=403, detail="请求校验失败，请刷新页面后重试。")
-    origin = request.headers.get("origin")
-    if origin and origin != get_settings().frontend_url:
-        raise HTTPException(status_code=403, detail="请求来源不受信任。")
 
 
 @router.post("/login", response_model=UserResponse, dependencies=[Depends(require_same_origin)])

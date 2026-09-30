@@ -7,6 +7,10 @@ export const router = createRouter({
     { path: '/', redirect: '/dashboard' },
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
     { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
+    { path: '/models', name: 'models', component: () => import('../views/ModelsView.vue'), meta: { requiresAuth: true } },
+    { path: '/models/create', name: 'model-create', component: () => import('../views/ModelFormView.vue'), meta: { requiresAuth: true } },
+    { path: '/models/:id/edit', name: 'model-edit', component: () => import('../views/ModelFormView.vue'), meta: { requiresAuth: true } },
+    { path: '/models/:id', name: 'model-detail', component: () => import('../views/ModelDetailView.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })
