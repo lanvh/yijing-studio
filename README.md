@@ -1,7 +1,7 @@
 # AI Seed Studio
 
 > 当前已补齐完整 MVP 的软件接入：Mock/真实图片、模特参考图、AI 分析与文案、素材导出。
-> 本机已选择 OpenAI 官方服务；尚缺 API Key，真实服务实测待完成。最新配置见文末“完整 MVP 接入版”。
+> 当前本机已改用 Seedream；在 .env 的 IMAGE_API_KEY 填入新密钥后重启即可。配置见文末“Seedream 当前使用配置”。
 
 AI Seed Studio 是一个 AI 虚拟模特与商品种草内容生成平台。
 
@@ -528,7 +528,7 @@ powershell -ExecutionPolicy Bypass -File scripts/npm-local.ps1 run test:e2e
 在 Mock 闭环基础上，已实现 OpenAI 官方图片 Provider、虚拟模特参考图生成、
 AI 商品视觉建议、AI 文案与明确的失败回退；所有功能保留 Mock / 本地模式。
 真实 Provider 请求格式和业务链路已由离线传输测试验证。
-**本机已切换为 OpenAI 官方服务，但未配置真实 API Key，尚未进行实际出图和效果验收。**
+此段记录之前的 OpenAI 接入；当前已改用 Seedream，以文末配置为准。
 此前“只做 Mock / 真实 Provider 暂缓”章节属于历史范围，当前以本节为准。
 
 ### 免费本地模式（模板默认，可随时切换）
@@ -601,3 +601,26 @@ LLM_API_KEY 留空时复用 IMAGE_API_KEY；图片和文字服务可分别启用
 - [图片生成与参考图编辑](https://developers.openai.com/api/docs/guides/image-generation)
 - [结构化输出](https://developers.openai.com/api/docs/guides/structured-outputs)
 - [图片理解](https://developers.openai.com/api/docs/guides/images-vision)
+
+## Seedream 当前使用配置（2026-10-01）
+
+当前本机已改用 Seedream，之前 OpenAI 配置章节保留作历史参考。
+打开项目根目录 `.env`，只需在现有 `IMAGE_API_KEY=` 后填写新的火山方舟密钥。
+不要将密钥写入 `.env.example` 或提交到 Git。
+
+```dotenv
+IMAGE_PROVIDER=seedream
+IMAGE_API_KEY=
+IMAGE_API_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+IMAGE_MODEL=doubao-seedream-5-0-pro-260628
+IMAGE_API_TIMEOUT_SECONDS=180
+LLM_PROVIDER=local
+```
+
+保存后执行 `scripts/stop-local.ps1`、`scripts/start-local.ps1`，再打开设置页。
+图片默认 Seedream 5.0 Pro，1776×2368 JPEG，带 AI 水印；
+选择 N 张会提交 N 次单图请求，部分成功仍可查看和下载，重试只补缺失数量。
+最多使用前 5 张模特图与前 5 张商品图，其余参考图保存在项目中但不发给该模型。
+Seedream 只负责图片，文案和商品资料整理暂用本地模板，不调用 OpenAI。
+本轮未使用真实密钥，尚未验证账户模型权限与实际生成效果。
+完整实现和测试记录见 [SEEDREAM_REPORT.md](SEEDREAM_REPORT.md)。

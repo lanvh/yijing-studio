@@ -4,6 +4,7 @@ from app.core.config import get_settings
 from app.providers.contracts import ImageProvider
 from app.providers.mock import MockImageProvider
 from app.providers.openai_images import OpenAIImageProvider
+from app.providers.seedream import SeedreamImageProvider
 
 
 class ProviderUnavailable(Exception):
@@ -20,7 +21,11 @@ class ProviderRouter:
     ):
         self.name = get_settings().image_provider if name is None else name
         self.factories = (
-            {"mock": MockImageProvider, "openai": OpenAIImageProvider}
+            {
+                "mock": MockImageProvider,
+                "openai": OpenAIImageProvider,
+                "seedream": SeedreamImageProvider,
+            }
             if factories is None
             else dict(factories)
         )

@@ -78,8 +78,8 @@ class ProviderImage(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     data: bytes = Field(min_length=1, max_length=15 * 1024 * 1024, exclude=True, repr=False)
     media_type: Literal["image/jpeg", "image/png"]
-    width: int = Field(ge=1, le=1536)
-    height: int = Field(ge=1, le=1536)
+    width: int = Field(ge=1, le=4096)
+    height: int = Field(ge=1, le=4096)
     metadata: dict = Field(default_factory=dict)
 
 

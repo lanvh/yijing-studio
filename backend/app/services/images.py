@@ -12,6 +12,7 @@ from app.providers.contracts import (
     ProviderResult,
 )
 from app.providers.router import ProviderRouter, ProviderUnavailable
+from app.providers.seedream import OUTPUT_SIZE as SEEDREAM_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class ImageService:
         self.timeout = (
             (
                 get_settings().image_api_timeout_seconds
-                if self.router.name == "openai"
+                if self.router.name in {"openai", "seedream"}
                 else get_settings().image_provider_timeout_seconds
             )
             if timeout_seconds is None
@@ -85,7 +86,7 @@ class ImageService:
                 "timeout",
                 (
                     "图片服务响应超时；请求可能已计费，重试前请检查账户用量。"
-                    if self.router.name == "openai"
+                    if self.router.name in {"openai", "seedream"}
                     else "图片 Provider 响应超时，请稍后重试。"
                 ),
                 retryable=True,
@@ -105,6 +106,11 @@ class ImageService:
             return False
         if len({image.id for image in result.images}) != len(result.images):
             return False
+        expected_size = (
+            SEEDREAM_SIZE
+            if result.provider == "seedream"
+            else (request.settings.width, request.settings.height)
+        )
         for image in result.images:
             try:
                 with Image.open(io.BytesIO(image.data)) as decoded:
@@ -112,7 +118,7 @@ class ImageService:
                     if (
                         decoded.format != expected
                         or decoded.size != (image.width, image.height)
-                        or decoded.size != (request.settings.width, request.settings.height)
+                        or decoded.size != expected_size
                     ):
                         return False
                     decoded.load()

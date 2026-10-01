@@ -14,5 +14,5 @@ export const generationApi = {
   copy: async (id: string, copy: Omit<ContentCopy, 'source'>) => (await api.patch<ContentCopy>(base + '/tasks/' + id + '/copy', copy)).data,
   regenerateCopy: async (id: string) => (await api.post<ContentCopy>(base + '/tasks/' + id + '/copy', {}, { timeout: 150000 })).data,
   export: async (id: string) => (await api.post<Blob>(base + '/tasks/' + id + '/export', {}, { responseType: 'blob', timeout: 60000 })).data,
-  provider: async () => (await api.get<{ available: boolean; mock: boolean; message: string; copy_mode: string; copy_available: boolean; configuration_only: boolean }>('/providers')).data,
+  provider: async () => (await api.get<{ provider: string; available: boolean; mock: boolean; message: string; copy_mode: string; copy_available: boolean; configuration_only: boolean }>('/providers')).data,
 }

@@ -158,3 +158,10 @@ test_real_providers.py 使用 MockTransport 验证官方 API 请求协议、错�
 历史真实任务与当前 Mock 配置无关的来源展示。
 tests/global-setup.ts 在任何上传/生成前验证服务为 Mock 与本地文案，避免测试产生外部费用。
 以上均不替代有效 Key 下的真实官方出图、成本与效果验收；目前该部分尚未执行。
+
+
+## Seedream 更新（2026-10-01）
+
+已接入 Seedream 5.0 Pro，当前本机不调用 OpenAI。原生 2K 竖图、多参考图、
+候选并发生成、部分失败重试、参考图保存和 ZIP 来源标记已实现。
+后端 222 项测试通过；真实密钥待用户本地填写。详情见 SEEDREAM_REPORT.md。

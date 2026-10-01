@@ -15,8 +15,8 @@ class QualityChecker:
                 valid = (
                     image.format in {"JPEG", "PNG"}
                     and not getattr(image, "is_animated", False)
-                    and 256 <= width <= 1536
-                    and 256 <= height <= 1536
+                    and 256 <= width <= 4096
+                    and 256 <= height <= 4096
                     and len(data) <= 15 * 1024 * 1024
                 )
                 if valid:

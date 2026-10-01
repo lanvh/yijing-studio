@@ -32,7 +32,7 @@ onMounted(load)
     />
     <section class="form-panel">
       <h2>图片服务</h2><p v-if="status">
-        <strong>{{ status.mock ? 'Mock 本地演示' : 'OpenAI 图片服务' }}</strong> · {{ status.available ? (status.mock ? '服务可用' : '配置就绪') : '服务不可用' }}
+        <strong>{{ status.mock ? 'Mock 本地演示' : status.provider === 'seedream' ? 'Seedream 图片服务' : status.provider === 'openai' ? 'OpenAI 图片服务' : status.provider }}</strong> · {{ status.available ? (status.mock ? '服务可用' : '配置就绪') : '服务不可用' }}
       </p><p>{{ status?.message }}</p>
       <p v-if="status?.mock">
         当前图片生成使用本地示意图，无图片 API 费用。

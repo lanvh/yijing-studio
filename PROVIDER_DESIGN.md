@@ -157,3 +157,10 @@ store=false。Key 使用 SecretStr，配置状态仅返回可用性布尔值，�
 ImageService 路由到 openai 时使用 IMAGE_API_TIMEOUT_SECONDS；Mock 继续使用原超时设置。
 当前只有 Mock 与 OpenAI 两个图片实现，没有同时接入其他供应商。
 官方真实网络生成尚未验收：缺少本机 API Key；离线协议与业务集成测试已覆盖。
+
+
+## Seedream 更新（2026-10-01）
+
+已接入 Seedream 5.0 Pro，当前本机不调用 OpenAI。原生 2K 竖图、多参考图、
+候选并发生成、部分失败重试、参考图保存和 ZIP 来源标记已实现。
+后端 222 项测试通过；真实密钥待用户本地填写。详情见 SEEDREAM_REPORT.md。

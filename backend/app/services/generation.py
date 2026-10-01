@@ -176,7 +176,7 @@ class GenerationService:
         task.lease_expires_at = task.started_at + timedelta(
             seconds=(
                 get_settings().image_api_timeout_seconds
-                if task.provider == "openai"
+                if task.provider in {"openai", "seedream"}
                 else get_settings().image_provider_timeout_seconds
             )
             * 2

@@ -161,3 +161,10 @@ Phase 9：OpenAI 官方图片适配及模特生成入口已实现，离线协议
 Phase 7 补齐 AI 文案，Phase 3 补齐 AI 图片观察建议，人工确认的事实保持独立。
 Phase 10/11 继续保留基础文件检查与稳定性测试。用户已选择 OpenAI 官方服务，
 本机配置已切换，尚缺 API Key；未发起付费调用。完整记录见 MVP_IMPLEMENTATION_REPORT.md。
+
+
+## Seedream 更新（2026-10-01）
+
+已接入 Seedream 5.0 Pro，当前本机不调用 OpenAI。原生 2K 竖图、多参考图、
+候选并发生成、部分失败重试、参考图保存和 ZIP 来源标记已实现。
+后端 222 项测试通过；真实密钥待用户本地填写。详情见 SEEDREAM_REPORT.md。

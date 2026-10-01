@@ -182,9 +182,9 @@ test('partial task displays retry and retains edited copy', async ({page}) => {
 test('real mode labels and missing credentials block generation without paid calls',async ({page}) => {
   await page.route('**/api/v1/providers',route => route.fulfill({
     status:200,contentType:'application/json',body:JSON.stringify({
-      provider:'openai',mock:false,available:false,requires_api_key:true,operations:[],
+      provider:'seedream',mock:false,available:false,requires_api_key:true,operations:[],
       message:'未配置图片 API Key；请在服务端 .env 配置后重启。',
-      copy_mode:'openai',copy_available:false,configuration_only:true,
+      copy_mode:'local',copy_available:true,configuration_only:true,
     }),
   }))
   await choose(page)
@@ -192,7 +192,7 @@ test('real mode labels and missing credentials block generation without paid cal
   await expect(page.getByText('AI 图片生成',{exact:true})).toBeVisible()
   await expect(page.getByText('未配置图片 API Key；请在服务端 .env 配置后重启。',{exact:true})).toBeVisible()
   await page.goto('/settings')
-  await expect(page.getByText('OpenAI 图片服务',{exact:true})).toBeVisible()
+  await expect(page.getByText('Seedream 图片服务',{exact:true})).toBeVisible()
   await page.screenshot({path:'../storage/qa/mvp-configuration-missing.png',fullPage:true})
 })
 
