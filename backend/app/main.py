@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api.ai_models import router as models_router
 from app.api.auth import router as auth_router
 from app.api.generation import router as generation_router
+from app.api.mobile_transfer import router as mobile_router
 from app.api.products import router as products_router
 from app.api.providers import router as providers_router
 from app.core.config import get_settings
@@ -34,6 +35,7 @@ app.include_router(models_router, prefix="/api/v1")
 app.include_router(products_router, prefix="/api/v1")
 app.include_router(providers_router, prefix="/api/v1")
 app.include_router(generation_router, prefix="/api/v1")
+app.include_router(mobile_router, prefix="/api/v1")
 app.add_middleware(UploadSizeLimitMiddleware)
 
 

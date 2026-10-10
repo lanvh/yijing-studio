@@ -628,3 +628,7 @@ Seedream 只负责图片，文案和商品资料整理暂用本地模板，不�
 ## 当前简化创作流程（2026-10-10）
 
 最新版本只需填写模特名称和性别、衣服名称，然后上传参考图。创建内容增加场景/风格/姿势预设与自定义方向；文案按穿搭分享截图结构生成。图片仍使用 Seedream，商品视觉分析与文案现在使用 Ark 豆包模型，复用已有 IMAGE_API_KEY。上述早期 local/OpenAI 配置仅供历史参考。当前配置与验证见 [SIMPLIFIED_WORKFLOW_REPORT.md](SIMPLIFIED_WORKFLOW_REPORT.md)。
+
+## iPhone 发布助手（2026-10-11）
+
+创作结果 → 手机发布助手 → 同一 Wi-Fi 下扫码 → 长按保存图片 → 一键复制完整文案 → 得物编辑并发布。二维码一小时有效，可撤销，无需绑定得物账号。启动脚本自动识别局域网地址；防火墙阻止访问时以管理员身份执行 scripts/enable-phone-access.ps1。使用方法和验证边界见 [MOBILE_PUBLISH_REPORT.md](MOBILE_PUBLISH_REPORT.md)。

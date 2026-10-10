@@ -4,9 +4,17 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import WorkspaceLayout from '../layouts/WorkspaceLayout.vue'
 import { generationApi } from '../api/generation'
+import { mobileTransferApi, type MobileLink } from '../api/mobileTransfer'
 import { errorMessage } from '../api/client'
 import { statusLabels, taskTime, type GenerationTask, type GenerationResult, type ContentCopy } from '../types/generation'
 const route = useRoute()
+const mobileLink = ref<MobileLink | null>(null), mobileOpen = ref(false)
+async function prepareMobile() {
+  await act(async () => { mobileLink.value = await mobileTransferApi.create(String(route.params.id)); mobileOpen.value = true })
+}
+async function stopMobile() {
+  await act(async () => { await mobileTransferApi.revoke(String(route.params.id)); mobileLink.value = null; mobileOpen.value = false; notice.value = '手机取图链接已停止。' })
+}
 const task = ref<GenerationTask | null>(null), error = ref(''), notice = ref('')
 const loading = ref(false), busy = ref(false), preview = ref<GenerationResult | null>(null)
 const draft = reactive({ title:'', caption:'', hashtags:'', product_summary:'', styling_notes:'' })
@@ -327,10 +335,60 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
           下载 ZIP 素材包
         </el-button>
       </section>
+      <section class="creation-submit">
+        <div>
+          <h2>用 iPhone 扫码取图</h2><p class="muted">
+            手机保存选中图片，一键复制完整文案，到得物编辑后发布。无需下载 ZIP 或绑定账号。
+          </p><p
+            v-if="dirty"
+            class="save-hint"
+          >
+            请先保存文案修改，再生成二维码。
+          </p>
+        </div>
+        <el-button
+          type="primary"
+          :loading="busy"
+          :disabled="!selected || dirty || task.is_active || !task.copy"
+          @click="prepareMobile"
+        >
+          手机发布助手
+        </el-button>
+      </section>
       <p class="muted">
         素材需由你手动审核与发布。系统不会自动发布到任何平台。
       </p>
     </template>
+    <el-dialog
+      v-model="mobileOpen"
+      title="iPhone 扫码取图"
+      width="min(480px, 94vw)"
+    >
+      <div
+        v-if="mobileLink"
+        class="mobile-qr-panel"
+      >
+        <img
+          :src="mobileLink.qr_image"
+          alt="手机取图二维码"
+          width="240"
+          height="240"
+        >
+        <p>手机与电脑连接同一 Wi-Fi，使用 iPhone 相机扫描二维码。</p>
+        <p>本次二维码一小时有效，仅提供这组图片和已保存文案；重新生成会使旧链接失效。</p>
+        <a
+          :href="mobileLink.url"
+          target="_blank"
+          rel="noreferrer"
+        >在当前设备打开取图页面 →</a>
+        <p class="muted">
+          如果手机打不开，请允许电脑防火墙的局域网访问，并确认电脑保持运行。
+        </p>
+        <el-button @click="stopMobile">
+          停止本次取图
+        </el-button>
+      </div>
+    </el-dialog>
     <el-dialog
       :model-value="!!preview"
       title="结果图片预览"

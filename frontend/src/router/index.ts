@@ -5,6 +5,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/dashboard' },
+    { path: '/mobile-publish/:id', name: 'mobile-publish', component: () => import('../views/MobilePublishView.vue') },
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
     { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
     { path: '/models', name: 'models', component: () => import('../views/ModelsView.vue'), meta: { requiresAuth: true } },
@@ -24,6 +25,7 @@ export const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  if (to.name === 'mobile-publish') return
   const auth = useAuthStore()
   if (!auth.initialized) await auth.restore()
   if (to.meta.requiresAuth && !auth.user) return { name: 'login' }

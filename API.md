@@ -221,3 +221,11 @@ Mock 失败注入仅用于本地单元测试，不提供 HTTP 参数或测试后
 - LLM_PROVIDER=ark 使用官方 /chat/completions JSON 输出，商品分析与文案使用同一 API Key 的视觉/文字模型。copy.source 新增 ark；模型权限未开通时保留素材并提供失败状态或本地回退。
 - 自动与手动文案生成会发送最多前 2 张结果图片，未确认视觉观察单独标记。
 详情见 SIMPLIFIED_WORKFLOW_REPORT.md。
+
+## 手机发布助手（2026-10-11）
+
+- POST /generation/tasks/{id}/mobile-transfer：所有者登录及来源校验，至少选择一张图片并已有文案；返回 url、expires_at、qr_image（本地 PNG data URL）。每次创建替换旧令牌。
+- DELETE /generation/tasks/{id}/mobile-transfer：所有者撤销，204。
+- GET /mobile-publish/{id}：使用 X-Mobile-Token，不需账号登录；仅返回冻结的标题/正文/话题和仍被选中的结果 ID，过期或无效 404。
+- GET /mobile-publish/{id}/images/{image_id}：同一令牌校验，图片必须属于该组且仍选中；返回原始图字节，no-store。
+令牌有效一小时，哈希存入现有任务快照，无数据库迁移。完整权限规则见 MOBILE_PUBLISH_REPORT.md。

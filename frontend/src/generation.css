@@ -76,3 +76,7 @@
 .clothing-picker-info { min-width: 0; }
 .clothing-picker-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 .clothing-picker-info span { display: block; color: #788071; font-size: 12px; margin-top: 4px; }
+
+.mobile-qr-panel { text-align: center; overflow-wrap: anywhere; }
+.mobile-qr-panel img { display: block; margin: 0 auto; width: min(240px,100%); height: auto; }
+.mobile-qr-panel p { line-height: 1.7; }
