@@ -153,24 +153,35 @@ onMounted(initialize)
               </router-link>
             </div>
             <div>
-              <label for="product-choice">衣服</label><select
+              <label for="product-choice">衣服</label>
+              <el-select
                 id="product-choice"
                 v-model="form.product_id"
-                required
+                class="clothing-picker"
+                popper-class="clothing-picker-menu"
+                placeholder="请选择衣服"
+                aria-label="衣服"
+                filterable
+                no-data-text="还没有衣服，请先添加"
+                no-match-text="没有找到这件衣服"
               >
-                <option
-                  value=""
-                  disabled
-                >
-                  请选择衣服
-                </option><option
+                <el-option
                   v-for="product in products"
                   :key="product.id"
                   :value="product.id"
+                  :label="product.name"
+                  class="clothing-picker-option"
                 >
-                  {{ product.name }} · {{ product.processed_images.length }} 张图片
-                </option>
-              </select>
+                  <ProductCover
+                    :src="product.processed_images[0]?.image_url"
+                    :name="product.name"
+                  />
+                  <div class="clothing-picker-info">
+                    <strong>{{ product.name }}</strong>
+                    <span>{{ product.processed_images.length ? product.processed_images.length + ' 张图片' : '暂无图片，请先上传' }}</span>
+                  </div>
+                </el-option>
+              </el-select>
               <div
                 v-if="selectedProduct"
                 class="selected-material"

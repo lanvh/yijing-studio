@@ -63,3 +63,16 @@
 }
 
 .creation-form textarea { resize: vertical; min-height: 120px; }
+
+.clothing-picker { width: 100%; margin-bottom: 14px; }
+.clothing-picker .el-select__wrapper { min-height: 48px; border-radius: 7px; }
+.creation-form .clothing-picker input { border: 0; padding: 0; background: transparent; border-radius: 0; }
+.creation-form .clothing-picker input:focus { outline: none; }
+.clothing-picker-menu .clothing-picker-option { height: 80px; display: flex; align-items: center; gap: 14px; padding: 10px 16px; line-height: 1.4; }
+.clothing-picker-option .product-cover { width: 52px; height: 60px; flex-shrink: 0; border-radius: 6px; overflow: hidden; }
+.clothing-picker-option .product-cover img { width: 100%; height: 100%; object-fit: contain; }
+.clothing-picker-option .product-placeholder { min-height: 0; height: 100%; padding: 4px; box-sizing: border-box; font-size: 10px; }
+.clothing-picker-option .product-placeholder svg { width: 22px; height: 22px; }
+.clothing-picker-info { min-width: 0; }
+.clothing-picker-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.clothing-picker-info span { display: block; color: #788071; font-size: 12px; margin-top: 4px; }
