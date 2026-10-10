@@ -149,6 +149,12 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
       <div class="mock-notice">
         <strong>{{ task.is_mock ? 'Mock 演示结果' : 'AI 生成结果' }}</strong><span>{{ task.is_mock ? '这些图片是本地生成的示意素材，不是真实 AI 换装。' : '图片为 AI 辅助视觉展示，并非真实试穿记录。' }}文件检查通过不代表人物、商品或美观度已验证。</span>
       </div>
+      <p
+        v-if="task.custom_direction"
+        class="form-panel"
+      >
+        自定义方向：{{ task.custom_direction }}
+      </p>
       <section
         v-if="task.status !== 'SUCCEEDED'"
         class="task-progress"
@@ -240,7 +246,7 @@ onUnmounted(() => { disposed = true; sequence++; clearTimeout(timer); window.rem
             <p class="step-number">
               WORDS TO GO WITH YOUR IMAGES
             </p><h2>让文案也成为你的表达</h2>
-          </div><span class="muted">{{ dirty ? '有未保存修改' : task.copy.source === 'user_edited' ? '已保存你的编辑' : task.copy.source === 'openai' ? 'AI 文案草稿' : task.copy.source === 'local_fallback' ? 'AI 文案失败，已保留本地草稿' : '本地模板草稿' }}</span>
+          </div><span class="muted">{{ dirty ? '有未保存修改' : task.copy.source === 'user_edited' ? '已保存你的编辑' : ['openai', 'ark'].includes(task.copy.source) ? 'AI 文案草稿' : task.copy.source === 'local_fallback' ? 'AI 文案失败，已保留本地草稿' : '本地模板草稿' }}</span>
         </div>
         <p class="muted">
           草稿仅使用已填写的商品资料，不代表真实试穿或使用体验。发布前请核对。

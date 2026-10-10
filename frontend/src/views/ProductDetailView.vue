@@ -227,7 +227,7 @@ watch(() => route.params.id, load, { immediate: true })
           {{ product.product_features.ai_analysis.message }}，可点击重新整理特征重试。
         </p>
         <template v-if="product.product_features.ai_analysis.findings">
-          <p>以下仅为图片观察建议，不会自动改写商品事实。请核对后在编辑资料中填写确认信息。</p>
+          <p>以下仅为图片观察建议，不会自动改写商品事实。生成与文案会参考可见外观，发布前请核对实际商品。</p>
           <dl class="profile-facts">
             <div><dt>可见颜色</dt><dd>{{ product.product_features.ai_analysis.findings.colors.join('、') || '未知' }}</dd></div>
             <div><dt>图案</dt><dd>{{ product.product_features.ai_analysis.findings.pattern || '未知' }}</dd></div>
@@ -252,7 +252,7 @@ watch(() => route.params.id, load, { immediate: true })
           添加正面、侧面与局部细节图片。原文件保留供下载，预览图会修正方向并清理元数据。
         </p>
         <p
-          v-if="provider?.copy_mode === 'openai'"
+          v-if="provider && ['openai', 'ark'].includes(provider.copy_mode)"
           class="mock-notice"
         >
           已启用 AI 商品分析。上传后将把最多前 4 张商品预览图发送至已配置服务，产生相应分析费用。

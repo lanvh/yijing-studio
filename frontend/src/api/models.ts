@@ -7,8 +7,8 @@ export const modelsApi = {
     (await api.get<ModelPage>('/models', { params: { q, offset, limit } })).data,
   limits: async () => (await api.get<ModelLimits>('/models/options')).data,
   get: async (id: string) => (await api.get<AIModel>('/models/' + id)).data,
-  create: async (profile: ModelProfile) => (await api.post<AIModel>('/models', profile)).data,
-  update: async (id: string, profile: ModelProfile) =>
+  create: async (profile: Partial<ModelProfile>) => (await api.post<AIModel>('/models', profile)).data,
+  update: async (id: string, profile: Partial<ModelProfile>) =>
     (await api.patch<AIModel>('/models/' + id, profile)).data,
   remove: async (id: string) => { await api.delete('/models/' + id) },
   removeImage: async (imageUrl: string) => { await api.delete(imageUrl.replace('/api/v1', '')) },

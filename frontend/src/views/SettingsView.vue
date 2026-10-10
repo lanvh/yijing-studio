@@ -41,7 +41,7 @@ onMounted(load)
         真实图片生成按服务商规则计费。这里的状态仅代表配置检查，实际访问权限、余额和可用性以生成请求为准。
       </p>
       <p v-if="status">
-        文案与商品分析：{{ status.copy_mode === 'openai' ? 'AI 服务' : '本地模板与资料整理' }} · {{ status.copy_available ? '配置就绪' : '缺少有效配置' }}
+        文案与商品分析：{{ ['openai', 'ark'].includes(status.copy_mode) ? 'AI 服务' : '本地模板与资料整理' }} · {{ status.copy_available ? '配置就绪' : '缺少有效配置' }}
       </p>
       <p>API Key 仅在服务端环境变量中配置。页面不会显示或保存密钥。</p><el-button
         :loading="busy"

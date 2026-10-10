@@ -5,8 +5,8 @@ export const productsApi = {
     (await api.get<ProductPage>('/products', { params: { q, category: category || undefined, offset, limit } })).data,
   limits: async () => (await api.get<ProductLimits>('/products/options')).data,
   get: async (id: string) => (await api.get<Product>('/products/' + id)).data,
-  create: async (profile: ProductProfile) => (await api.post<Product>('/products', profile)).data,
-  update: async (id: string, profile: ProductProfile) =>
+  create: async (profile: Partial<ProductProfile>) => (await api.post<Product>('/products', profile)).data,
+  update: async (id: string, profile: Partial<ProductProfile>) =>
     (await api.patch<Product>('/products/' + id, profile)).data,
   remove: async (id: string) => { await api.delete('/products/' + id) },
   analyze: async (id: string) => (await api.post<Product>('/products/' + id + '/analyze', {}, { timeout: 150000 })).data,

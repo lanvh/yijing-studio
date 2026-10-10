@@ -2,8 +2,8 @@
 .mock-notice strong { flex-shrink:0; }
 .creation-form fieldset,.copy-panel fieldset { border:0; padding:0; margin:0; min-width:0; }
 .creation-form label,.copy-panel label { display:block; margin:16px 0 8px; font-size:14px; font-weight:600; }
-.creation-form input,.creation-form select,.copy-panel input,.copy-panel textarea,.task-filter select { box-sizing:border-box; width:100%; padding:12px 14px; border:1px solid #d8ddd4; border-radius:7px; background:#fff; color:#344335; font:inherit; line-height:1.5; }
-.creation-form input:focus,.creation-form select:focus,.copy-panel input:focus,.copy-panel textarea:focus { outline:2px solid #789566; outline-offset:2px; }
+.creation-form input,.creation-form select,.creation-form textarea,.copy-panel input,.copy-panel textarea,.task-filter select { box-sizing:border-box; width:100%; padding:12px 14px; border:1px solid #d8ddd4; border-radius:7px; background:#fff; color:#344335; font:inherit; line-height:1.5; }
+.creation-form input:focus,.creation-form select:focus,.creation-form textarea:focus,.copy-panel input:focus,.copy-panel textarea:focus { outline:2px solid #789566; outline-offset:2px; }
 .creation-form .form-panel,.copy-panel { margin:24px 0; }
 .creation-form select { margin-bottom:14px; }
 .creation-form h2,.copy-panel h2 { font-size:23px; }
@@ -61,3 +61,5 @@
   .stat-grid { gap:8px; } .stat-grid a { padding:15px 10px; font-size:12px; }
   .mobile-nav { flex-wrap:wrap; }
 }
+
+.creation-form textarea { resize: vertical; min-height: 120px; }

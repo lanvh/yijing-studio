@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -14,6 +13,18 @@ SCENES = {
     "campus": "校园",
     "gym": "健身房",
     "travel": "旅行",
+    "bookstore": "书店",
+    "gallery": "艺术展馆",
+    "rooftop": "城市天台",
+    "park": "公园绿道",
+    "seaside": "海边",
+    "old_town": "复古街区",
+    "subway": "地铁站",
+    "office": "通勤街景",
+    "hotel": "酒店大堂",
+    "autumn_road": "秋日林荫道",
+    "night_street": "夜晚霓虹街头",
+    "home": "居家窗边",
 }
 STYLES = {
     "dewu": "潮流种草",
@@ -23,6 +34,18 @@ STYLES = {
     "sport": "运动",
     "luxury": "轻奢",
     "casual": "休闲",
+    "american_vintage": "美式复古",
+    "preppy": "复古学院",
+    "cleanfit": "清爽简约",
+    "french": "法式日常",
+    "cityboy": "城市少年",
+    "outdoor": "山系户外",
+    "workwear": "工装",
+    "y2k": "千禧辣妹",
+    "old_money": "经典优雅",
+    "japanese": "日系松弛",
+    "editorial": "时尚杂志",
+    "soft": "温柔日常",
 }
 POSES = {
     "front_standing": "正面站姿",
@@ -32,6 +55,17 @@ POSES = {
     "mirror_selfie": "镜前自拍",
     "look_down": "低头",
     "detail_pose": "细节展示",
+    "leaning_wall": "靠墙站立",
+    "hands_pockets": "双手插兜",
+    "crossing_street": "过街抓拍",
+    "adjusting_collar": "整理衣领",
+    "looking_back": "回头",
+    "sitting_steps": "台阶坐姿",
+    "holding_coffee": "手持咖啡",
+    "turning": "轻转身",
+    "close_up": "上半身近景",
+    "back_view": "背影",
+    "natural_candid": "自然抓拍",
 }
 
 
@@ -40,21 +74,24 @@ class TaskCreate(BaseModel):
     model_id: uuid.UUID
     product_id: uuid.UUID
     request_key: uuid.UUID = Field(default_factory=uuid.uuid4)
-    scene: Literal[
-        "street", "mall", "mirror", "studio", "cafe", "parking", "campus", "gym", "travel"
-    ] = "studio"
-    style: Literal["dewu", "streetwear", "minimal", "korean", "sport", "luxury", "casual"] = (
-        "casual"
-    )
-    pose: Literal[
-        "front_standing",
-        "side_standing",
-        "walking",
-        "sitting",
-        "mirror_selfie",
-        "look_down",
-        "detail_pose",
-    ] = "front_standing"
+    scene: str = Field(default="studio", max_length=32)
+    style: str = Field(default="casual", max_length=32)
+    pose: str = Field(default="front_standing", max_length=32)
+    custom_direction: str = Field(default="", max_length=1200)
+
+    @field_validator("scene", "style", "pose")
+    @classmethod
+    def valid_direction(cls, value, info):
+        choices = {"scene": SCENES, "style": STYLES, "pose": POSES}
+        if value not in choices[info.field_name]:
+            raise ValueError("请选择有效的预设方向。")
+        return value
+
+    @field_validator("custom_direction")
+    @classmethod
+    def clean_direction(cls, value):
+        return value.strip()
+
     requested_count: int = Field(default=4, strict=True)
 
     @field_validator("requested_count")
@@ -111,6 +148,7 @@ class TaskSummary(BaseModel):
     scene: str
     style: str
     pose: str
+    custom_direction: str = ""
     requested_count: int
     status: str
     is_mock: bool

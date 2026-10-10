@@ -8,10 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.product import Product, ProductImage
+from app.providers.ark_text import ArkTextProvider
 from app.providers.openai_http import ExternalServiceError
 from app.providers.openai_text import OpenAITextProvider
 from app.repositories.products import ProductRepository
-from app.schemas.product import ProductCreate, ProductUpdate
+from app.schemas.product import CATEGORIES, ProductCreate, ProductUpdate
 from app.services.image_uploads import UploadRejected, validate_reference
 from app.services.product_analyzer import ProductAnalyzer, image_palette
 from app.storage.local import ImageStorage
@@ -66,7 +67,7 @@ class ProductService:
 
     def analyze_visual(self, product_id, user_id):
         product = self.owned(product_id, user_id, lock=True)
-        if get_settings().llm_provider != "openai" or not product.processed_images:
+        if get_settings().llm_provider not in {"openai", "ark"} or not product.processed_images:
             return product
         image_ids = [str(i.id) for i in product.processed_images]
         revision = product.updated_at
@@ -77,11 +78,14 @@ class ProductService:
         facts = {"name": product.name, "category": product.category, "color": product.color}
         self.db.commit()
         try:
-            findings = asyncio.run(OpenAITextProvider().analyze(facts, images)).model_dump()
+            text_provider = (
+                ArkTextProvider() if get_settings().llm_provider == "ark" else OpenAITextProvider()
+            )
+            findings = asyncio.run(text_provider.analyze(facts, images)).model_dump()
             report = {
                 "status": "suggestions_ready",
                 "findings": findings,
-                "source": "openai",
+                "source": get_settings().llm_provider,
                 "confirmed": False,
                 "image_ids": image_ids,
             }
@@ -89,7 +93,7 @@ class ProductService:
             report = {
                 "status": "failed",
                 "message": exc.message,
-                "source": "openai",
+                "source": get_settings().llm_provider,
                 "confirmed": False,
             }
         product = self.owned(product_id, user_id, lock=True)
@@ -98,6 +102,10 @@ class ProductService:
             or [str(i.id) for i in product.processed_images] != image_ids
         ):
             return product
+        if report.get("findings") and product.category == "other":
+            inferred = report["findings"].get("category")
+            if inferred in CATEGORIES:
+                product.category = inferred
         product.product_features = {**product.product_features, "ai_analysis": report}
         self.db.commit()
         return product

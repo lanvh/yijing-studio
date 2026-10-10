@@ -624,3 +624,7 @@ LLM_PROVIDER=local
 Seedream 只负责图片，文案和商品资料整理暂用本地模板，不调用 OpenAI。
 本轮未使用真实密钥，尚未验证账户模型权限与实际生成效果。
 完整实现和测试记录见 [SEEDREAM_REPORT.md](SEEDREAM_REPORT.md)。
+
+## 当前简化创作流程（2026-10-10）
+
+最新版本只需填写模特名称和性别、衣服名称，然后上传参考图。创建内容增加场景/风格/姿势预设与自定义方向；文案按穿搭分享截图结构生成。图片仍使用 Seedream，商品视觉分析与文案现在使用 Ark 豆包模型，复用已有 IMAGE_API_KEY。上述早期 local/OpenAI 配置仅供历史参考。当前配置与验证见 [SIMPLIFIED_WORKFLOW_REPORT.md](SIMPLIFIED_WORKFLOW_REPORT.md)。

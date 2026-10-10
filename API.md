@@ -212,3 +212,12 @@ Mock 失败注入仅用于本地单元测试，不提供 HTTP 参数或测试后
 - copy.source 可为 local_template、user_edited、openai、local_fallback。
   任务中 AI 文案失败不丢弃图片；显式重生成失败返回 503 并保留原文案。
 - 真实任务与导出不再固定 mock 标识；每张结果 metadata 记录模型与 usage（若上游提供）。
+
+## 简化创作接口更新（2026-10-10）
+
+- POST /models 现在只需 name、gender；旧可选字段仍兼容，PATCH 未提交字段保持原值。默认年龄字段仅为历史兼容，不写入换装人物特征提示词。
+- POST /products 现在只需 name，未提供 category 时为 other；Ark 视觉分类只补齐未知类别，不覆盖已有类别。
+- POST /generation/tasks 新增可选 custom_direction（默认空字符串，最多 1200 字）；响应含此字段。字段进入任务快照、提示词与提交幂等参数校验。旧任务默认空字符串。场景/风格/姿势合法值从 GET /generation/options 获取。
+- LLM_PROVIDER=ark 使用官方 /chat/completions JSON 输出，商品分析与文案使用同一 API Key 的视觉/文字模型。copy.source 新增 ark；模型权限未开通时保留素材并提供失败状态或本地回退。
+- 自动与手动文案生成会发送最多前 2 张结果图片，未确认视觉观察单独标记。
+详情见 SIMPLIFIED_WORKFLOW_REPORT.md。

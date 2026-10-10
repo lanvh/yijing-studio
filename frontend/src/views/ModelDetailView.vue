@@ -165,13 +165,10 @@ watch(() => route.params.id, load, { immediate: true })
         <div class="summary-body">
           <span class="eyebrow">THE CHARACTER AT A GLANCE</span><h2>人物档案</h2>
           <dl class="profile-facts">
-            <div><dt>性别</dt><dd>{{ genderLabels[model.gender] }}</dd></div><div><dt>年龄段</dt><dd>{{ model.age_range }} 岁</dd></div>
-            <div><dt>身高</dt><dd>{{ model.height ? model.height + ' cm' : '未填写' }}</dd></div><div><dt>体型</dt><dd>{{ model.body_type || '未填写' }}</dd></div>
-            <div><dt>肤色</dt><dd>{{ model.skin_tone || '未填写' }}</dd></div><div><dt>发色</dt><dd>{{ model.hair_color || '未填写' }}</dd></div>
-            <div><dt>发型</dt><dd>{{ model.hair_style || '未填写' }}</dd></div><div><dt>风格</dt><dd>{{ model.style || '未填写' }}</dd></div>
+            <div><dt>性别</dt><dd>{{ genderLabels[model.gender] }}</dd></div>
           </dl>
           <p class="profile-description">
-            {{ model.description || '还没有人物描述。可以在编辑资料中补充。' }}
+            脸部、发型、身材和肤色以参考图为准，无需填写额外特征。
           </p>
         </div>
       </section>

@@ -80,7 +80,7 @@ class GenerationService:
         )
         values = payload.model_dump(mode="json", exclude={"request_key"})
         if existing:
-            if existing.snapshot["request"] != values:
+            if {"custom_direction": "", **existing.snapshot["request"]} != values:
                 raise GenerationError("提交标识已用于另一组参数，请重新提交。")
             self.db.commit()
             return self.owned(existing.id, user_id)
@@ -153,7 +153,7 @@ class GenerationService:
                 prompt=prompt,
                 negative_prompt=negative,
                 results=[],
-                **payload.model_dump(),
+                **payload.model_dump(exclude={"custom_direction"}),
             )
             self.db.add(task)
             self.db.commit()
@@ -263,7 +263,11 @@ class GenerationService:
         except Exception as exc:
             logger.error("Task generation failed: %s", type(exc).__name__)
             error = "生成或图片存储失败，请检查服务后重试。"
-        draft = compose_copy(copy_context) if outputs and needs_copy else None
+        draft = (
+            compose_copy(copy_context, images=[self.storage.read(key) for key in written[:2]])
+            if outputs and needs_copy
+            else None
+        )
         try:
             task = self.owned(task_id, user_id, lock=True)
             if task.attempt != attempt or task.status != "PROCESSING":
@@ -363,8 +367,9 @@ class GenerationService:
             style=task.style,
             pose=task.pose,
         )
+        copy_images = [self.storage.read(r.storage_key) for r in task.results[:2]]
         self.db.commit()
-        draft = compose_copy(context, allow_fallback=False)
+        draft = compose_copy(context, allow_fallback=False, images=copy_images)
         task = self.owned(task_id, user_id, lock=True)
         self.editable(task)
         after = (

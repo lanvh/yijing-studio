@@ -55,6 +55,10 @@ class GenerationTask(Base):
     )
 
     @property
+    def custom_direction(self) -> str:
+        return self.snapshot.get("request", {}).get("custom_direction", "")
+
+    @property
     def model_name(self) -> str:
         return self.snapshot["model"]["name"]
 

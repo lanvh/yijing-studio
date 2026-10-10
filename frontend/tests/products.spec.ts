@@ -19,17 +19,14 @@ test.afterEach(async ({ page }) => {
 })
 async function createProduct(page: Page, name: string, category = '鞋履') {
   await page.goto('/products/create')
-  await page.getByLabel('商品名称', { exact: true }).fill(name)
-  await page.getByRole('combobox', { name: /商品类别/ }).press('ArrowDown')
-  await page.getByRole('option', { name: category, exact: true }).click()
-  await page.getByLabel('商品颜色', { exact: true }).fill('米白色')
-  await page.getByLabel('品牌', { exact: true }).fill('QA Brand')
+  await page.getByLabel('衣服名称', { exact: true }).fill(name)
   const waiting = page.waitForResponse(response => response.url().endsWith('/api/v1/products') && response.request().method() === 'POST')
   await page.getByRole('button', { name: '创建商品', exact: true }).click()
   const response = await waiting
   expect(response.status()).toBe(201)
   const product = await response.json()
   created.push(product.id)
+  await page.request.patch('/api/v1/products/' + product.id, {headers,data:{ category: ({'包袋':'bag','鞋履':'shoes','上衣':'top','手表':'watch','项链':'necklace'} as Record<string,string>)[category], feature_notes: { material: '织物', shape: '低帮系带', critical_features: ['白色鞋底'] } }})
   await expect(page).toHaveURL(new RegExp('/products/' + product.id + '$'))
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible()
   return product.id as string
@@ -50,9 +47,6 @@ test('product CRUD, original download, feature refresh, filtering and responsive
   const name = '白色运动鞋 · QA ' + Date.now()
   const id = await createProduct(page, name)
   await page.getByRole('button', { name: '编辑资料' }).click()
-  await page.getByLabel('材质', { exact: true }).fill('织物')
-  await page.getByLabel('形状与结构', { exact: true }).fill('低帮系带')
-  await page.getByLabel('关键细节（每行一条）', { exact: true }).fill('白色鞋底\n三组鞋带孔')
   await page.screenshot({ path: '../storage/qa/phase3-form-desktop.png', fullPage: true })
   await page.getByRole('button', { name: '保存修改', exact: true }).click()
   await expect(page).toHaveURL(new RegExp('/products/' + id + '$'))
@@ -131,7 +125,7 @@ test('remaining acceptance categories create and persist', async ({ page }) => {
 test('product required fields, empty search and retry', async ({ page }) => {
   await page.goto('/products/create')
   await page.getByRole('button', { name: '创建商品', exact: true }).click()
-  await expect(page.getByText('请输入商品名称', { exact: true })).toBeVisible()
+  expect(await page.getByLabel('衣服名称', {exact:true}).evaluate((input: HTMLInputElement) => input.validity.valueMissing)).toBe(true)
   await page.route('**/api/v1/products?*', route => route.fulfill({
     status: 503, contentType: 'application/json', body: JSON.stringify({ detail: '数据库暂时不可用，请稍后重试。' }),
   }))

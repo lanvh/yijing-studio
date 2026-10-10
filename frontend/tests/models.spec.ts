@@ -24,9 +24,6 @@ test.afterEach(async ({ page }) => {
 async function createModel(page: Page, name: string) {
   await page.goto('/models/create')
   await page.getByLabel('模特名称', { exact: true }).fill(name)
-  await page.getByLabel('体型', { exact: true }).fill('匀称')
-  await page.getByLabel('发型', { exact: true }).fill('齐肩短发')
-  await page.getByLabel('人物描述', { exact: true }).fill('测试用成年虚拟角色。')
   const responsePromise = page.waitForResponse(response =>
     response.url().endsWith('/api/v1/models') && response.request().method() === 'POST')
   await page.getByRole('button', { name: '创建模特', exact: true }).click()
@@ -45,11 +42,9 @@ test('create, edit, upload, persistence, search and model deletion', async ({ pa
   const name = 'Female Casual · QA ' + Date.now()
   const id = await createModel(page, name)
   await page.getByRole('button', { name: '编辑资料' }).click()
-  await page.getByLabel('人物风格', { exact: true }).fill('minimal')
-  await page.getByLabel('发色', { exact: true }).fill('黑色')
   await page.getByRole('button', { name: '保存修改', exact: true }).click()
   await expect(page).toHaveURL(new RegExp('/models/' + id + '$'))
-  await expect(page.getByText('minimal', { exact: true })).toBeVisible()
+  await expect(page.getByText('脸部、发型、身材和肤色以参考图为准，无需填写额外特征。', { exact: true })).toBeVisible()
   await expect(page.getByLabel('上传参考图', { exact: true })).toBeDisabled()
   await page.getByText('我确认这是有使用权的 AI 虚拟成人形象，非真人照片。', { exact: true }).click()
   await expect(page.getByRole('checkbox')).toBeChecked()
@@ -89,9 +84,7 @@ test('create, edit, upload, persistence, search and model deletion', async ({ pa
 test('male profile, invalid upload, image removal and mobile form', async ({ page }) => {
   const id = await createModel(page, 'Male Streetwear · QA ' + Date.now())
   await page.getByRole('button', { name: '编辑资料' }).click()
-  await page.getByRole('combobox', { name: /性别/ }).press('ArrowDown')
-  await page.getByRole('option', { name: '男性', exact: true }).click()
-  await page.getByLabel('人物风格', { exact: true }).fill('streetwear')
+  await page.getByLabel('性别', { exact: true }).selectOption('male')
   await page.setViewportSize({ width: 390, height: 844 })
   await page.screenshot({ path: '../storage/qa/phase2-form-mobile.png', fullPage: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
@@ -116,7 +109,7 @@ test('male profile, invalid upload, image removal and mobile form', async ({ pag
 test('model form validation and list retry', async ({ page }) => {
   await page.goto('/models/create')
   await page.getByRole('button', { name: '创建模特', exact: true }).click()
-  await expect(page.getByText('请输入模特名称', { exact: true })).toBeVisible()
+  expect(await page.getByLabel('模特名称', { exact: true }).evaluate((el: HTMLInputElement) => el.validity.valueMissing)).toBe(true)
   await page.route('**/api/v1/models?*', route => route.fulfill({
     status: 503, contentType: 'application/json', body: JSON.stringify({ detail: '数据库暂时不可用，请稍后重试。' }),
   }))

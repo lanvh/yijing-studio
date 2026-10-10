@@ -50,7 +50,7 @@ class ProductCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=100)
     brand: str = Field(default="", max_length=100)
-    category: Category
+    category: Category = "other"
     color: str = Field(default="", max_length=100)
     description: str = Field(default="", max_length=2000)
     feature_notes: ProductFeatureNotes = Field(default_factory=ProductFeatureNotes)
@@ -78,7 +78,7 @@ class ProductResponse(BaseModel):
     id: uuid.UUID
     name: str
     brand: str
-    category: Category
+    category: Category = "other"
     color: str
     description: str
     product_features: dict

@@ -20,7 +20,7 @@ class ProfileBase(BaseModel):
 class ModelCreate(ProfileBase):
     name: Name
     gender: Gender
-    age_range: AgeRange
+    age_range: AgeRange = "25-34"
     height: Height | None = None
     body_type: ShortText = ""
     skin_tone: ShortText = ""

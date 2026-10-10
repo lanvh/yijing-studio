@@ -119,3 +119,9 @@
   .library-empty { padding: 45px 20px; }
   .heading-actions { flex-wrap: wrap; }
 }
+
+/* Minimal profile fields share the workspace input treatment. */
+.profile-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.profile-form .form-panel > label { display: block; font-size: 14px; margin: 20px 0 8px; }
+.profile-form .form-panel > input, .profile-form .form-panel > select { width: 100%; min-height: 48px; box-sizing: border-box; border: 1px solid #d9e1d2; border-radius: 8px; padding: 12px 14px; font: inherit; color: inherit; background: #fff; }
+.profile-form .form-panel > input:focus, .profile-form .form-panel > select:focus { outline: 2px solid #b7ce99; outline-offset: 2px; }

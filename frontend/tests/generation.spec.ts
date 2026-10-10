@@ -29,7 +29,7 @@ test.afterEach(async ({ page }) => {
 async function choose(page: Page) {
   await page.goto('/create-content')
   await page.getByLabel('AI 模特',{exact:true}).selectOption(modelId)
-  await page.getByLabel('商品',{exact:true}).selectOption(productId)
+  await page.getByLabel('衣服',{exact:true}).selectOption(productId)
   await page.getByLabel('场景',{exact:true}).selectOption('cafe')
   await page.getByLabel('风格',{exact:true}).selectOption('minimal')
 }
@@ -48,8 +48,15 @@ test('Mock full workflow, editable copy, selected export, persistence, responsiv
   const errors: string[] = []
   page.on('pageerror',e => errors.push(e.message))
   await choose(page)
+  await page.getByLabel('场景',{exact:true}).selectOption('bookstore')
+  await page.getByLabel('风格',{exact:true}).selectOption('american_vintage')
+  await page.getByLabel('姿势',{exact:true}).selectOption('hands_pockets')
+  await page.getByLabel('自定义方向（选填）',{exact:true}).fill('暖色傍晚书店，美式复古穿搭，双手插兜自然站立')
   await page.screenshot({path:'../storage/qa/workflow-create-desktop.png',fullPage:true})
   const id = await generate(page)
+  const detail = await (await page.request.get('/api/v1/generation/tasks/'+id)).json()
+  expect(detail.custom_direction).toContain('暖色傍晚书店')
+  await expect(page.getByText('自定义方向：暖色傍晚书店，美式复古穿搭，双手插兜自然站立',{exact:true})).toBeVisible()
   await page.waitForFunction(() => [...document.querySelectorAll('.result-preview img')].every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth>0))
   await page.screenshot({path:'../storage/qa/workflow-results-desktop.png',fullPage:true})
   await page.getByRole('checkbox',{name:'选择图片 4',exact:true}).uncheck()

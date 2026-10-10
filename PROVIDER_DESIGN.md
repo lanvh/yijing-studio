@@ -164,3 +164,7 @@ ImageService 路由到 openai 时使用 IMAGE_API_TIMEOUT_SECONDS；Mock 继续�
 已接入 Seedream 5.0 Pro，当前本机不调用 OpenAI。原生 2K 竖图、多参考图、
 候选并发生成、部分失败重试、参考图保存和 ZIP 来源标记已实现。
 后端 222 项测试通过；真实密钥待用户本地填写。详情见 SEEDREAM_REPORT.md。
+
+## Ark 商品分析与文案（2026-10-10）
+
+ArkTextProvider 使用官方方舟 Chat Completions、JSON 对象输出与本地 Pydantic 校验，关闭思考输出。不调用 OpenAI；复用结构化视觉观察的数据 schema。仅允许官方 Ark HTTPS 地址，API Key 留空时复用 IMAGE_API_KEY。默认文本模型 doubao-seed-2-1-lite-260915。商品分析使用最多前 4 张 JPEG 预览，种草文案使用最多前 2 张结果图片；失败保护和未经证实事实隔离见 SIMPLIFIED_WORKFLOW_REPORT.md。

@@ -35,6 +35,7 @@ def configured(monkeypatch):
     monkeypatch.setattr(get_settings(), "image_model", "gpt-image-2.5-sunburst")
     monkeypatch.setattr(get_settings(), "image_api_base_url", "")
     monkeypatch.setattr(get_settings(), "llm_api_key", SecretStr("unit-test-not-a-real-key"))
+    monkeypatch.setattr(get_settings(), "llm_api_base_url", "")
 
 
 def image_reply(count=1):

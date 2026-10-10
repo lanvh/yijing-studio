@@ -16,10 +16,9 @@ const router = useRouter()
 const route = useRoute()
 const models = ref<AIModel[]>([]), products = ref<Product[]>([])
 const options = ref<GenerationOptions | null>(null)
-const form = reactive({ model_id: '', product_id: '', scene: 'studio', style: 'casual', pose: 'front_standing', requested_count: 4 })
-const modelQuery = ref(''), productQuery = ref('')
+const form = reactive({ model_id: '', product_id: '', scene: 'studio', style: 'casual', pose: 'front_standing', requested_count: 4, custom_direction: '' })
 const selectedModel = ref<AIModel | null>(null), selectedProduct = ref<Product | null>(null)
-const busy = ref(false), loading = ref(true), searching = ref(false), error = ref('')
+const busy = ref(false), loading = ref(true), error = ref('')
 const provider = ref<Awaited<ReturnType<typeof generationApi.provider>> | null>(null)
 const requestKey = ref(crypto.randomUUID())
 const ready = computed(() => !!selectedModel.value?.reference_images.length && !!selectedProduct.value?.processed_images.length)
@@ -27,15 +26,13 @@ watch(form, () => { requestKey.value = crypto.randomUUID() })
 watch(() => form.model_id, id => { selectedModel.value = models.value.find(m => m.id === id) || null })
 watch(() => form.product_id, id => { selectedProduct.value = products.value.find(p => p.id === id) || null })
 async function search() {
-  searching.value = true
   error.value = ''
   try {
-    const [m,p] = await Promise.all([modelsApi.list(modelQuery.value,0,100), productsApi.list(productQuery.value,'',0,100)])
+    const [m,p] = await Promise.all([modelsApi.list('',0,100), productsApi.list('','',0,100)])
     models.value = m.items; products.value = p.items
     if (selectedModel.value && !models.value.some(m => m.id === form.model_id)) models.value.unshift(selectedModel.value)
     if (selectedProduct.value && !products.value.some(p => p.id === form.product_id)) products.value.unshift(selectedProduct.value)
   } catch (cause) { error.value = errorMessage(cause) }
-  finally { searching.value = false }
 }
 async function initialize() {
   loading.value = true
@@ -71,7 +68,7 @@ onMounted(initialize)
         <p class="eyebrow">
           MAKE SOMETHING YOURS
         </p><h1>把人物、好物与灵感放在一起。</h1><p class="muted">
-          选好素材与场景，生成一组可整理、可下载的演示作品。
+          选择模特与衣服，安排场景和风格，生成图片与种草文案。
         </p>
       </div><router-link to="/tasks">
         查看生成记录 →
@@ -117,34 +114,6 @@ onMounted(initialize)
           </p><h2>选择本次创作素材</h2>
           <div class="form-grid">
             <div>
-              <label for="model-search">搜索模特名称</label><input
-                id="model-search"
-                v-model="modelQuery"
-                maxlength="100"
-                placeholder="输入名称筛选，可留空"
-              >
-            </div>
-            <div>
-              <label for="product-search">搜索商品名称</label><input
-                id="product-search"
-                v-model="productQuery"
-                maxlength="100"
-                placeholder="输入名称筛选，可留空"
-              >
-            </div>
-          </div>
-          <el-button
-            :loading="searching"
-            :disabled="busy"
-            @click="search"
-          >
-            筛选素材
-          </el-button>
-          <p class="muted">
-            每类显示前 100 项，可按名称筛选查找；每次生成最多使用各自前 8 张参考图。
-          </p>
-          <div class="form-grid">
-            <div>
               <label for="model-choice">AI 模特</label><select
                 id="model-choice"
                 v-model="form.model_id"
@@ -184,7 +153,7 @@ onMounted(initialize)
               </router-link>
             </div>
             <div>
-              <label for="product-choice">商品</label><select
+              <label for="product-choice">衣服</label><select
                 id="product-choice"
                 v-model="form.product_id"
                 required
@@ -193,7 +162,7 @@ onMounted(initialize)
                   value=""
                   disabled
                 >
-                  请选择商品
+                  请选择衣服
                 </option><option
                   v-for="product in products"
                   :key="product.id"
@@ -210,7 +179,7 @@ onMounted(initialize)
                   :src="selectedProduct.processed_images[0]?.image_url"
                   :name="selectedProduct.name"
                 /><div>
-                  <strong>{{ selectedProduct.name }}</strong><p>{{ selectedProduct.color || '颜色待补充' }}</p><router-link :to="'/products/' + selectedProduct.id">
+                  <strong>{{ selectedProduct.name }}</strong><p>{{ '外观以参考图片为准' }}</p><router-link :to="'/products/' + selectedProduct.id">
                     查看 / 补充商品图片 →
                   </router-link>
                 </div>
@@ -286,6 +255,17 @@ onMounted(initialize)
               </select>
             </div>
           </div>
+          <label for="custom-direction">自定义方向（选填）</label>
+          <textarea
+            id="custom-direction"
+            v-model="form.custom_direction"
+            rows="4"
+            maxlength="1200"
+            placeholder="例如：傍晚的上海复古街区，美式学院穿搭，暖色胶片光线，手持咖啡自然抓拍。自定义描述优先于对应预设。"
+          />
+          <p class="muted">
+            描述你想要的场景、风格、姿势和光线；人物与衣服的外观以参考图为准。
+          </p>
         </section>
         <section class="creation-submit">
           <div>
