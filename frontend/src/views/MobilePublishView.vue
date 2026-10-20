@@ -41,7 +41,7 @@ onUnmounted(() => { disposed = true; pictures.value.forEach(p => URL.revokeObjec
 <template>
   <main class="mobile-publish">
     <p class="eyebrow">
-      AI SEED STUDIO
+      衣镜 Studio
     </p><h1>把这组穿搭带到得物</h1>
     <p class="muted">
       先保存图片，再复制文案，最后到得物编辑并发布。

@@ -39,12 +39,12 @@ async function submit() {
   <main class="login-shell">
     <section
       class="studio-story"
-      aria-label="AI 种草摄影棚介绍"
+      aria-label="衣镜 Studio介绍"
     >
       <a
         class="brand brand-light"
         href="/"
-      ><span class="brand-mark">s</span> AI SEED STUDIO</a>
+      ><span class="brand-mark">衣</span> 衣镜 Studio</a>
       <div class="story-copy">
         <span class="eyebrow light">YOUR NEXT CREATIVE SPACE</span>
         <h1>让灵感，<br>成为下一张好图。</h1>
@@ -64,7 +64,7 @@ async function submit() {
         <span class="art-label">A SPACE FOR WHAT'S NEXT ↗</span>
       </div>
       <div class="story-footer">
-        <span>AI 种草摄影棚</span><span>CREATE WITH INTENTION.</span>
+        <span>衣镜 Studio</span><span>CREATE WITH INTENTION.</span>
       </div>
     </section>
 
@@ -139,7 +139,7 @@ async function submit() {
         </p>
       </div>
       <footer class="login-footer">
-        <span>灵感有出处，创作有边界。</span><span>AI SEED STUDIO © 2026</span>
+        <span>灵感有出处，创作有边界。</span><span>衣镜 Studio © 2026</span>
       </footer>
     </section>
   </main>

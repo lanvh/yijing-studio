@@ -16,3 +16,11 @@ test-results/
 
 .tools/
 *.tsbuildinfo
+
+# Private runtime data and database backups
+backend/storage/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.dump

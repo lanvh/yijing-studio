@@ -30,7 +30,7 @@ async function logout() {
         class="brand"
         to="/dashboard"
       >
-        <span class="brand-mark">s</span><span>AI SEED<br>STUDIO</span>
+        <span class="brand-mark">衣</span><span>衣镜<br>STUDIO</span>
       </router-link>
       <p class="nav-label">
         工作空间
